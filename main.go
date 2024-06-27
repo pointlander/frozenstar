@@ -15,6 +15,11 @@ import (
 	"github.com/pointlander/matrix"
 )
 
+const (
+	// Size is the size of the workload
+	Size = 40
+)
+
 // Example is a learning example
 type Example struct {
 	Input  [][]byte `json:"input"`
@@ -81,7 +86,7 @@ func main() {
 		b2 := x4.Add(y4.H(z4))
 
 		rawData := make([][]float64, 0, 8)
-		for _, set := range sets {
+		for _, set := range sets[:Size] {
 			for _, t := range set.Train {
 				output := matrix.NewMatrix(7, 1)
 				for _, v := range t.Input {
@@ -102,7 +107,7 @@ func main() {
 			}
 		}
 
-		meta := matrix.NewMatrix(len(sets), len(sets), make([]float32, len(rawData)*len(rawData))...)
+		meta := matrix.NewMatrix(len(rawData), len(rawData), make([]float32, len(rawData)*len(rawData))...)
 		for i := 0; i < 100; i++ {
 			clusters, _, err := kmeans.Kmeans(int64(i+1), rawData, len(sets), kmeans.SquaredEuclideanDistance, -1)
 			if err != nil {
@@ -119,11 +124,11 @@ func main() {
 		}
 		/*meta = matrix.SelfAttention(meta, meta, meta)*/
 
-		x := make([][]float64, len(sets))
+		x := make([][]float64, len(rawData))
 		for i := range x {
-			x[i] = make([]float64, len(sets))
+			x[i] = make([]float64, len(rawData))
 			for j := range x[i] {
-				x[i][j] = float64(meta.Data[i*len(sets)+j])
+				x[i][j] = float64(meta.Data[i*len(rawData)+j])
 			}
 		}
 
