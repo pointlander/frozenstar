@@ -64,7 +64,7 @@ func main() {
 	rng := matrix.Rand(1)
 	sets := Load()
 
-	process := func(sample matrix.Sample) [][]float64 {
+	process := func(sample matrix.Sample) ([][]float64, []int) {
 		x1 := sample.Vars[0][0].Sample()
 		y1 := sample.Vars[0][1].Sample()
 		z1 := sample.Vars[0][2].Sample()
@@ -86,7 +86,8 @@ func main() {
 		b2 := x4.Add(y4.H(z4))
 
 		rawData := make([][]float64, 0, 8)
-		for _, set := range sets[:Size] {
+		classes := make([]int, 0, 8)
+		for class, set := range sets[:Size] {
 			for _, t := range set.Train {
 				output := matrix.NewMatrix(7, 1)
 				for _, v := range t.Input {
@@ -104,12 +105,13 @@ func main() {
 					data = append(data, float64(value))
 				}
 				rawData = append(rawData, data)
+				classes = append(classes, class)
 			}
 		}
 
 		meta := matrix.NewMatrix(len(rawData), len(rawData), make([]float32, len(rawData)*len(rawData))...)
 		for i := 0; i < 100; i++ {
-			clusters, _, err := kmeans.Kmeans(int64(i+1), rawData, len(sets), kmeans.SquaredEuclideanDistance, -1)
+			clusters, _, err := kmeans.Kmeans(int64(i+1), rawData, len(sets[:Size]), kmeans.SquaredEuclideanDistance, -1)
 			if err != nil {
 				panic(err)
 			}
@@ -132,12 +134,12 @@ func main() {
 			}
 		}
 
-		return x
+		return x, classes
 	}
 	optimizer := matrix.NewOptimizer(&rng, 4, .1, 4, func(samples []matrix.Sample, x ...matrix.Matrix) {
 		done := make(chan bool, 8)
 		sample := func(s *matrix.Sample) {
-			meta := process(*s)
+			meta, _ := process(*s)
 
 			entropy := 0.0
 			for i := range meta {
@@ -194,12 +196,12 @@ func main() {
 		}
 	}
 
-	meta := process(sample)
-	clusters, _, err := kmeans.Kmeans(1, meta, len(sets), kmeans.SquaredEuclideanDistance, -1)
+	meta, classes := process(sample)
+	clusters, _, err := kmeans.Kmeans(1, meta, len(sets[:Size]), kmeans.SquaredEuclideanDistance, -1)
 	if err != nil {
 		panic(err)
 	}
 	for i, v := range clusters {
-		fmt.Printf("%3d %d\n", i, v)
+		fmt.Printf("%3d %3d %d\n", i, classes[i], v)
 	}
 }
