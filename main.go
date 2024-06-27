@@ -134,7 +134,7 @@ func main() {
 
 		return x
 	}
-	optimizer := matrix.NewOptimizer(&rng, 8, .1, 4, func(samples []matrix.Sample, x ...matrix.Matrix) {
+	optimizer := matrix.NewOptimizer(&rng, 4, .1, 4, func(samples []matrix.Sample, x ...matrix.Matrix) {
 		done := make(chan bool, 8)
 		sample := func(s *matrix.Sample) {
 			meta := process(*s)
@@ -184,6 +184,14 @@ func main() {
 	for i := 0; i < 33; i++ {
 		sample = optimizer.Iterate()
 		fmt.Println(i, sample.Cost)
+		cost := sample.Cost
+		if cost < 0 {
+			cost = 0
+			break
+		}
+		if cost < 1e-9 {
+			break
+		}
 	}
 
 	meta := process(sample)
