@@ -108,6 +108,22 @@ func main() {
 						direction = !direction
 					}
 				}
+				direction = false
+				for _, v := range t.Output {
+					for i := range v {
+						s := v[i]
+						if direction {
+							s = v[len(v)-i-1]
+						}
+						input := matrix.NewZeroMatrix(10, 1)
+						input.Data[s] = 1
+						in := matrix.NewMatrix(17, 1)
+						in.Data = append(in.Data, input.Data...)
+						in.Data = append(in.Data, output.Data...)
+						output = w2.MulT(w1.MulT(in).Add(b1).Everett()).Add(b2)
+						direction = !direction
+					}
+				}
 				data := make([]float64, 0, 7)
 				for _, value := range output.Data {
 					data = append(data, float64(value))
