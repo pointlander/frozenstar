@@ -18,6 +18,8 @@ import (
 const (
 	// Size is the size of the workload
 	Size = 40
+	// Width is the width of the network
+	Width = 16
 )
 
 // Example is a learning example
@@ -181,7 +183,7 @@ func main() {
 			fmt.Printf(".")
 		}
 		fmt.Printf("\n")
-	}, matrix.NewCoord(17, 7), matrix.NewCoord(7, 1), matrix.NewCoord(14, 7), matrix.NewCoord(7, 1))
+	}, matrix.NewCoord(17, Width), matrix.NewCoord(Width, 1), matrix.NewCoord(2*Width, 7), matrix.NewCoord(7, 1))
 	var sample matrix.Sample
 	for i := 0; i < 33; i++ {
 		sample = optimizer.Iterate()
