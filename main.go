@@ -92,14 +92,20 @@ func main() {
 		for class, set := range sets[:Size] {
 			for _, t := range set.Train {
 				output := matrix.NewZeroMatrix(7, 1)
+				direction := false
 				for _, v := range t.Input {
-					for _, s := range v {
+					for i := range v {
+						s := v[i]
+						if direction {
+							s = v[len(v)-i-1]
+						}
 						input := matrix.NewZeroMatrix(10, 1)
 						input.Data[s] = 1
 						in := matrix.NewMatrix(17, 1)
 						in.Data = append(in.Data, input.Data...)
 						in.Data = append(in.Data, output.Data...)
 						output = w2.MulT(w1.MulT(in).Add(b1).Everett()).Add(b2)
+						direction = !direction
 					}
 				}
 				data := make([]float64, 0, 7)
