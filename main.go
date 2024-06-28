@@ -91,7 +91,7 @@ func main() {
 		classes := make([]int, 0, 8)
 		for class, set := range sets[:Size] {
 			for _, t := range set.Train {
-				output := matrix.NewMatrix(7, 1)
+				output := matrix.NewZeroMatrix(7, 1)
 				for _, v := range t.Input {
 					for _, s := range v {
 						input := matrix.NewZeroMatrix(10, 1)
