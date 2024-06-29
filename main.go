@@ -18,8 +18,12 @@ import (
 const (
 	// Size is the size of the workload
 	Size = 40
+	// Input is the size of the input
+	Input = 11
 	// Width is the width of the network
 	Width = 16
+	// Output is the size of the output
+	Output = 7
 )
 
 // Example is a learning example
@@ -91,7 +95,7 @@ func main() {
 		classes := make([]int, 0, 8)
 		for class, set := range sets[:Size] {
 			for _, t := range set.Train {
-				output := matrix.NewZeroMatrix(7, 1)
+				output := matrix.NewZeroMatrix(Output, 1)
 				direction := false
 				for _, v := range t.Input {
 					for i := range v {
@@ -99,9 +103,9 @@ func main() {
 						if direction {
 							s = v[len(v)-i-1]
 						}
-						input := matrix.NewZeroMatrix(10, 1)
+						input := matrix.NewZeroMatrix(Input, 1)
 						input.Data[s] = 1
-						in := matrix.NewMatrix(17, 1)
+						in := matrix.NewMatrix(Input+Output, 1)
 						in.Data = append(in.Data, input.Data...)
 						in.Data = append(in.Data, output.Data...)
 						output = w2.MulT(w1.MulT(in).Add(b1).Everett()).Add(b2)
@@ -115,9 +119,10 @@ func main() {
 						if direction {
 							s = v[len(v)-i-1]
 						}
-						input := matrix.NewZeroMatrix(10, 1)
+						input := matrix.NewZeroMatrix(Input, 1)
 						input.Data[s] = 1
-						in := matrix.NewMatrix(17, 1)
+						input.Data[10] = 1
+						in := matrix.NewMatrix(Input+Output, 1)
 						in.Data = append(in.Data, input.Data...)
 						in.Data = append(in.Data, output.Data...)
 						output = w2.MulT(w1.MulT(in).Add(b1).Everett()).Add(b2)
@@ -205,7 +210,8 @@ func main() {
 			fmt.Printf(".")
 		}
 		fmt.Printf("\n")
-	}, matrix.NewCoord(17, Width), matrix.NewCoord(Width, 1), matrix.NewCoord(2*Width, 7), matrix.NewCoord(7, 1))
+	}, matrix.NewCoord(Input+Output, Width), matrix.NewCoord(Width, 1),
+		matrix.NewCoord(2*Width, Output), matrix.NewCoord(Output, 1))
 	var sample matrix.Sample
 	for i := 0; i < 33; i++ {
 		sample = optimizer.Iterate()
