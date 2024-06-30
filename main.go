@@ -19,7 +19,7 @@ const (
 	// Size is the size of the workload
 	Size = 40
 	// Input is the size of the input
-	Input = 11
+	Input = 10 + 30 + 30 + 1
 	// Width is the width of the network
 	Width = 16
 	// Output is the size of the output
@@ -97,7 +97,7 @@ func main() {
 			for _, t := range set.Train {
 				output := matrix.NewZeroMatrix(Output, 1)
 				direction := false
-				for _, v := range t.Input {
+				for j, v := range t.Input {
 					for i := range v {
 						s := v[i]
 						if direction {
@@ -105,6 +105,8 @@ func main() {
 						}
 						input := matrix.NewZeroMatrix(Input, 1)
 						input.Data[s] = 1
+						input.Data[10+i] = 1
+						input.Data[10+30+j] = 1
 						in := matrix.NewMatrix(Input+Output, 1)
 						in.Data = append(in.Data, input.Data...)
 						in.Data = append(in.Data, output.Data...)
@@ -113,7 +115,7 @@ func main() {
 					}
 				}
 				direction = false
-				for _, v := range t.Output {
+				for j, v := range t.Output {
 					for i := range v {
 						s := v[i]
 						if direction {
@@ -121,7 +123,9 @@ func main() {
 						}
 						input := matrix.NewZeroMatrix(Input, 1)
 						input.Data[s] = 1
-						input.Data[10] = 1
+						input.Data[10+i] = 1
+						input.Data[10+30+j] = 1
+						input.Data[10+30+30] = 1
 						in := matrix.NewMatrix(Input+Output, 1)
 						in.Data = append(in.Data, input.Data...)
 						in.Data = append(in.Data, output.Data...)
