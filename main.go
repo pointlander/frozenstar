@@ -14,6 +14,9 @@ import (
 
 	"github.com/pointlander/frozenstar/kmeans"
 	"github.com/pointlander/matrix"
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/vg"
 )
 
 const (
@@ -72,7 +75,7 @@ func Cluster() {
 	rng := matrix.Rand(1)
 	sets := Load()
 
-	process := func(sample matrix.Sample) ([][]float64, []int) {
+	process := func(sample matrix.Sample) ([][]float64, []int, []matrix.Matrix) {
 		x1 := sample.Vars[0][0].Sample()
 		y1 := sample.Vars[0][1].Sample()
 		z1 := sample.Vars[0][2].Sample()
@@ -92,6 +95,7 @@ func Cluster() {
 		y4 := sample.Vars[3][1].Sample()
 		z4 := sample.Vars[3][2].Sample()
 		b2 := x4.Add(y4.H(z4))
+		params := []matrix.Matrix{w1, b1, w2, b2}
 
 		rawData := make([][]float64, 0, 8)
 		classes := make([]int, 0, 8)
@@ -169,12 +173,12 @@ func Cluster() {
 			}
 		}
 
-		return x, classes
+		return x, classes, params
 	}
 	optimizer := matrix.NewOptimizer(&rng, 4, .1, 4, func(samples []matrix.Sample, x ...matrix.Matrix) {
 		done := make(chan bool, 8)
 		sample := func(s *matrix.Sample) {
-			meta, _ := process(*s)
+			meta, _, _ := process(*s)
 
 			entropy := 0.0
 			for i := range meta {
@@ -233,13 +237,32 @@ func Cluster() {
 	}
 
 	clustersCount := len(sets[:Size])
-	meta, classes := process(sample)
+	meta, classes, params := process(sample)
 	clusters, _, err := kmeans.Kmeans(1, meta, clustersCount, kmeans.SquaredEuclideanDistance, -1)
 	if err != nil {
 		panic(err)
 	}
 	for i, v := range clusters {
 		fmt.Printf("%3d %3d %d\n", i, classes[i], v)
+	}
+
+	var values plotter.Values
+	for _, param := range params {
+		for _, value := range param.Data {
+			values = append(values, float64(value))
+		}
+	}
+	p := plot.New()
+	p.Title.Text = "histogram plot"
+
+	hist, err := plotter.NewHist(values, 20)
+	if err != nil {
+		panic(err)
+	}
+	p.Add(hist)
+
+	if err := p.Save(8*vg.Inch, 8*vg.Inch, "histogram.png"); err != nil {
+		panic(err)
 	}
 
 	ab, ba := make([][]float64, clustersCount), make([][]float64, clustersCount)
