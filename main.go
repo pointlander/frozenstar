@@ -6,6 +6,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"math"
 	"os"
@@ -66,7 +67,8 @@ func Load() []Set {
 	return sets
 }
 
-func main() {
+// Cluster clusters the problems
+func Cluster() {
 	rng := matrix.Rand(1)
 	sets := Load()
 
@@ -284,4 +286,18 @@ func main() {
 	}
 	fmt.Println("sumAB", sumAB)
 	fmt.Println("sumBA", sumBA)
+}
+
+var (
+	// FlagCluster clustering mode
+	FlagCluster = flag.Bool("cluster", false, "clustering mode")
+)
+
+func main() {
+	flag.Parse()
+
+	if *FlagCluster {
+		Cluster()
+		return
+	}
 }
