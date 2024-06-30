@@ -157,7 +157,7 @@ func main() {
 				}
 			}
 		}
-		/*meta = matrix.SelfAttention(meta, meta, meta)*/
+		meta = matrix.SelfAttention(meta, meta, meta)
 
 		x := make([][]float64, len(rawData))
 		for i := range x {
@@ -230,12 +230,58 @@ func main() {
 		}
 	}
 
+	clustersCount := len(sets[:Size])
 	meta, classes := process(sample)
-	clusters, _, err := kmeans.Kmeans(1, meta, len(sets[:Size]), kmeans.SquaredEuclideanDistance, -1)
+	clusters, _, err := kmeans.Kmeans(1, meta, clustersCount, kmeans.SquaredEuclideanDistance, -1)
 	if err != nil {
 		panic(err)
 	}
 	for i, v := range clusters {
 		fmt.Printf("%3d %3d %d\n", i, classes[i], v)
 	}
+
+	ab, ba := make([][]float64, clustersCount), make([][]float64, clustersCount)
+	for i := range ab {
+		ab[i] = make([]float64, clustersCount)
+		ba[i] = make([]float64, clustersCount)
+	}
+	for i := range clusters {
+		a := int(classes[i])
+		b := clusters[i]
+		ab[a][b]++
+		ba[b][a]++
+	}
+	entropy := 0.0
+	for i := 0; i < clustersCount; i++ {
+		entropy += (1.0 / float64(clustersCount)) * math.Log(1.0/float64(clustersCount))
+	}
+	fmt.Println(-entropy, -(1.0/float64(clustersCount))*math.Log(1.0/float64(clustersCount)))
+	sumAB := 0.0
+	for i := range ab {
+		entropy := 0.0
+		for _, value := range ab[i] {
+			if value > 0 {
+				p := value / 150
+				entropy += p * math.Log(p)
+			}
+		}
+		entropy = -entropy
+		fmt.Println("ab", i, entropy)
+		sumAB += entropy
+	}
+	sumBA := 0.0
+	for i := range ba {
+		entropy := 0.0
+		for _, value := range ba[i] {
+			if value > 0 {
+				p := value / 150
+				entropy += p * math.Log(p)
+			}
+		}
+		entropy = -entropy
+		fmt.Println("ba", i, entropy)
+		sumBA += entropy
+	}
+	fmt.Println("sumAB", sumAB)
+	fmt.Println("sumBA", sumBA)
 }
