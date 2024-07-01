@@ -531,6 +531,104 @@ func Encdec() {
 	}
 	fmt.Println("sumAB", sumAB)
 	fmt.Println("sumBA", sumBA)
+	processDecoder := func(sample matrix.Sample) (float64, []matrix.Matrix) {
+		x1 := sample.Vars[0][0].Sample()
+		y1 := sample.Vars[0][1].Sample()
+		z1 := sample.Vars[0][2].Sample()
+		w1 := x1.Add(y1.H(z1))
+
+		x2 := sample.Vars[1][0].Sample()
+		y2 := sample.Vars[1][1].Sample()
+		z2 := sample.Vars[1][2].Sample()
+		b1 := x2.Add(y2.H(z2))
+
+		x3 := sample.Vars[2][0].Sample()
+		y3 := sample.Vars[2][1].Sample()
+		z3 := sample.Vars[2][2].Sample()
+		w2 := x3.Add(y3.H(z3))
+
+		x4 := sample.Vars[3][0].Sample()
+		y4 := sample.Vars[3][1].Sample()
+		z4 := sample.Vars[3][2].Sample()
+		b2 := x4.Add(y4.H(z4))
+		params := []matrix.Matrix{w1, b1, w2, b2}
+
+		cost := 0.0
+		for _, set := range sets[:Size] {
+			for _, t := range set.Train {
+				output := matrix.NewZeroMatrix(Input+Output, 1)
+				direction := false
+				loss, count := 0.0, 0.0
+				for j, v := range t.Output {
+					for i := range v {
+						s := v[i]
+						if direction {
+							s = v[len(v)-i-1]
+						}
+						input := matrix.NewZeroMatrix(Input, 1)
+						input.Data[s] = 1
+						input.Data[10+i] = 1
+						input.Data[10+30+j] = 1
+						in := matrix.NewMatrix(Output, 1)
+						in.Data = append(in.Data, output.Data[Input:]...)
+						output = w2.MulT(w1.MulT(in).Add(b1).Everett()).Add(b2).Sigmoid()
+						for k := range output.Data[:Input] {
+							diff := float64(input.Data[k]) - float64(output.Data[k])
+							loss += diff * diff
+							count++
+						}
+						direction = !direction
+					}
+				}
+				cost += loss / count
+			}
+		}
+		cost /= float64(Size)
+		return cost, params
+	}
+	optimizerDecoder := matrix.NewOptimizer(&rng, 4, .1, 4, func(samples []matrix.Sample, x ...matrix.Matrix) {
+		done := make(chan bool, 8)
+		sample := func(s *matrix.Sample) {
+			loss, _ := processDecoder(*s)
+			s.Cost = loss
+			done <- true
+		}
+		index, flight, cpus := 0, 0, runtime.NumCPU()
+		for flight < cpus && index < len(samples) {
+			go sample(&samples[index])
+			index++
+			flight++
+		}
+		for index < len(samples) {
+			<-done
+			flight--
+			fmt.Printf(".")
+
+			go sample(&samples[index])
+			index++
+			flight++
+		}
+		for i := 0; i < flight; i++ {
+			<-done
+			fmt.Printf(".")
+		}
+		fmt.Printf("\n")
+	}, matrix.NewCoord(Output, Width), matrix.NewCoord(Width, 1),
+		matrix.NewCoord(2*Width, Input+Output), matrix.NewCoord(Input+Output, 1))
+	var sample1 matrix.Sample
+	for i := 0; i < 33; i++ {
+		sample1 = optimizerDecoder.Iterate()
+		fmt.Println(i, sample1.Cost)
+		cost := sample.Cost
+		if cost < 0 {
+			cost = 0
+			break
+		}
+		if cost < 1e-9 {
+			break
+		}
+	}
+	_ = sample1
 }
 
 var (
