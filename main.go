@@ -601,7 +601,7 @@ func Encdec() {
 						input.Data[10+30+j] = 1
 						in := matrix.NewMatrix(Output, 1)
 						in.Data = append(in.Data, output.Data[Input:]...)
-						output = w2.MulT(w1.MulT(in).Add(b1).Everett()).Add(b2).Sigmoid()
+						output = w2.MulT(w1.MulT(in.Sigmoid()).Add(b1).Everett()).Add(b2)
 						for k := range output.Data[:Input] {
 							diff := float64(input.Data[k]) - float64(output.Data[k])
 							loss += diff * diff
