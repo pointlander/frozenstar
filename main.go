@@ -531,6 +531,34 @@ func Encdec() {
 	}
 	fmt.Println("sumAB", sumAB)
 	fmt.Println("sumBA", sumBA)
+
+	outputs := []matrix.Matrix{}
+	for _, set := range sets[:Size] {
+		for _, t := range set.Train {
+			output := matrix.NewZeroMatrix(Output, 1)
+			direction := false
+			for j, v := range t.Input {
+				for i := range v {
+					s := v[i]
+					if direction {
+						s = v[len(v)-i-1]
+					}
+					input := matrix.NewZeroMatrix(Input, 1)
+					input.Data[s] = 1
+					input.Data[10+i] = 1
+					input.Data[10+30+j] = 1
+					in := matrix.NewMatrix(Input+Output, 1)
+					in.Data = append(in.Data, input.Data...)
+					in.Data = append(in.Data, output.Data...)
+					output = params[2].MulT(params[0].MulT(in).Add(params[1]).Everett()).Add(params[3])
+					direction = !direction
+				}
+			}
+			data := matrix.NewMatrix(Output, 1)
+			data.Data = append(data.Data, output.Data...)
+			outputs = append(outputs, data)
+		}
+	}
 	processDecoder := func(sample matrix.Sample) (float64, []matrix.Matrix) {
 		x1 := sample.Vars[0][0].Sample()
 		y1 := sample.Vars[0][1].Sample()
@@ -554,9 +582,11 @@ func Encdec() {
 		params := []matrix.Matrix{w1, b1, w2, b2}
 
 		cost := 0.0
+		pair := 0
 		for _, set := range sets[:Size] {
 			for _, t := range set.Train {
 				output := matrix.NewZeroMatrix(Input+Output, 1)
+				copy(output.Data[Input:], outputs[pair].Data)
 				direction := false
 				loss, count := 0.0, 0.0
 				for j, v := range t.Output {
@@ -581,6 +611,7 @@ func Encdec() {
 					}
 				}
 				cost += loss / count
+				pair++
 			}
 		}
 		cost /= float64(Size)
@@ -616,7 +647,7 @@ func Encdec() {
 	}, matrix.NewCoord(Output, Width), matrix.NewCoord(Width, 1),
 		matrix.NewCoord(2*Width, Input+Output), matrix.NewCoord(Input+Output, 1))
 	var sample1 matrix.Sample
-	for i := 0; i < 33; i++ {
+	for i := 0; i < 128; i++ {
 		sample1 = optimizerDecoder.Iterate()
 		fmt.Println(i, sample1.Cost)
 		cost := sample.Cost
