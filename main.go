@@ -70,10 +70,61 @@ func Load() []Set {
 	return sets
 }
 
+// Pixel is an image pixel
+type Pixel struct {
+	C uint8
+	X int
+	Y int
+}
+
+// Pair is an input output pair
+type Pair struct {
+	Class  int
+	Input  []Pixel
+	Output []Pixel
+}
+
 // Cluster clusters the problems
 func Cluster() {
 	rng := matrix.Rand(1)
 	sets := Load()
+	pairs := make([]Pair, 0, 8)
+	for s, set := range sets[:Size] {
+		for _, t := range set.Train {
+			direction := false
+			pair := Pair{
+				Class: s,
+			}
+			for j, v := range t.Input {
+				for i := range v {
+					if direction {
+						i = len(v) - i - 1
+					}
+					pair.Input = append(pair.Input, Pixel{
+						C: v[i],
+						X: i,
+						Y: j,
+					})
+					direction = !direction
+				}
+			}
+			direction = false
+			for j, v := range t.Output {
+				for i := range v {
+					if direction {
+						i = len(v) - i - 1
+					}
+					pair.Output = append(pair.Output, Pixel{
+						C: v[i],
+						X: i,
+						Y: j,
+					})
+					direction = !direction
+				}
+			}
+			pairs = append(pairs, pair)
+		}
+	}
 
 	process := func(sample matrix.Sample) ([][]float64, []int, []matrix.Matrix) {
 		x1 := sample.Vars[0][0].Sample()
@@ -99,53 +150,35 @@ func Cluster() {
 
 		rawData := make([][]float64, 0, 8)
 		classes := make([]int, 0, 8)
-		for class, set := range sets[:Size] {
-			for _, t := range set.Train {
-				output := matrix.NewZeroMatrix(Output, 1)
-				direction := false
-				for j, v := range t.Input {
-					for i := range v {
-						s := v[i]
-						if direction {
-							s = v[len(v)-i-1]
-						}
-						input := matrix.NewZeroMatrix(Input, 1)
-						input.Data[s] = 1
-						input.Data[10+i] = 1
-						input.Data[10+30+j] = 1
-						in := matrix.NewMatrix(Input+Output, 1)
-						in.Data = append(in.Data, input.Data...)
-						in.Data = append(in.Data, output.Data...)
-						output = w2.MulT(w1.MulT(in).Add(b1).Everett()).Add(b2)
-						direction = !direction
-					}
-				}
-				direction = false
-				for j, v := range t.Output {
-					for i := range v {
-						s := v[i]
-						if direction {
-							s = v[len(v)-i-1]
-						}
-						input := matrix.NewZeroMatrix(Input, 1)
-						input.Data[s] = 1
-						input.Data[10+i] = 1
-						input.Data[10+30+j] = 1
-						input.Data[10+30+30] = 1
-						in := matrix.NewMatrix(Input+Output, 1)
-						in.Data = append(in.Data, input.Data...)
-						in.Data = append(in.Data, output.Data...)
-						output = w2.MulT(w1.MulT(in).Add(b1).Everett()).Add(b2)
-						direction = !direction
-					}
-				}
-				data := make([]float64, 0, 7)
-				for _, value := range output.Data {
-					data = append(data, float64(value))
-				}
-				rawData = append(rawData, data)
-				classes = append(classes, class)
+		for _, pair := range pairs {
+			output := matrix.NewZeroMatrix(Output, 1)
+			for _, p := range pair.Input {
+				input := matrix.NewZeroMatrix(Input, 1)
+				input.Data[p.C] = 1
+				input.Data[10+p.X] = 1
+				input.Data[10+30+p.Y] = 1
+				in := matrix.NewMatrix(Input+Output, 1)
+				in.Data = append(in.Data, input.Data...)
+				in.Data = append(in.Data, output.Data...)
+				output = w2.MulT(w1.MulT(in).Add(b1).Everett()).Add(b2)
 			}
+			for _, p := range pair.Input {
+				input := matrix.NewZeroMatrix(Input, 1)
+				input.Data[p.C] = 1
+				input.Data[10+p.X] = 1
+				input.Data[10+30+p.Y] = 1
+				input.Data[10+30+30] = 1
+				in := matrix.NewMatrix(Input+Output, 1)
+				in.Data = append(in.Data, input.Data...)
+				in.Data = append(in.Data, output.Data...)
+				output = w2.MulT(w1.MulT(in).Add(b1).Everett()).Add(b2)
+			}
+			data := make([]float64, 0, 7)
+			for _, value := range output.Data {
+				data = append(data, float64(value))
+			}
+			rawData = append(rawData, data)
+			classes = append(classes, pair.Class)
 		}
 
 		meta := matrix.NewMatrix(len(rawData), len(rawData), make([]float32, len(rawData)*len(rawData))...)
