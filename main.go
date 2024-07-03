@@ -105,8 +105,8 @@ func Cluster() {
 						X: i,
 						Y: j,
 					})
-					direction = !direction
 				}
+				direction = !direction
 			}
 			direction = false
 			for j, v := range t.Output {
@@ -119,12 +119,43 @@ func Cluster() {
 						X: i,
 						Y: j,
 					})
-					direction = !direction
 				}
+				direction = !direction
 			}
 			pairs = append(pairs, pair)
 		}
 	}
+
+	/*for _, pair := range pairs {
+		sort.Slice(pair.Input, func(i, j int) bool {
+			if pair.Input[i].C < pair.Input[j].C {
+				return true
+			} else if pair.Input[i].C == pair.Input[j].C {
+				if pair.Input[i].Y < pair.Input[j].Y {
+					return true
+				} else if pair.Input[i].Y == pair.Input[j].Y {
+					if pair.Input[i].X < pair.Input[j].X {
+						return true
+					}
+				}
+			}
+			return false
+		})
+		sort.Slice(pair.Output, func(i, j int) bool {
+			if pair.Output[i].C < pair.Output[j].C {
+				return true
+			} else if pair.Output[i].C == pair.Output[j].C {
+				if pair.Output[i].Y < pair.Output[j].Y {
+					return true
+				} else if pair.Output[i].Y == pair.Output[j].Y {
+					if pair.Output[i].X < pair.Output[j].X {
+						return true
+					}
+				}
+			}
+			return false
+		})
+	}*/
 
 	process := func(sample matrix.Sample) ([][]float64, []int, []matrix.Matrix) {
 		x1 := sample.Vars[0][0].Sample()
