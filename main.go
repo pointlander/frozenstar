@@ -193,7 +193,7 @@ func Cluster() {
 				in.Data = append(in.Data, output.Data...)
 				output = w2.MulT(w1.MulT(in).Add(b1).Everett()).Add(b2)
 			}
-			for _, p := range pair.Input {
+			for _, p := range pair.Output {
 				input := matrix.NewZeroMatrix(Input, 1)
 				input.Data[p.C] = 1
 				input.Data[10+p.X] = 1
@@ -380,6 +380,44 @@ func Encdec() {
 	rng := matrix.Rand(1)
 	sets := Load()
 
+	pairs := make([]Pair, 0, 8)
+	for s, set := range sets[:Size] {
+		for _, t := range set.Train {
+			direction := false
+			pair := Pair{
+				Class: s,
+			}
+			for j, v := range t.Input {
+				for i := range v {
+					if direction {
+						i = len(v) - i - 1
+					}
+					pair.Input = append(pair.Input, Pixel{
+						C: v[i],
+						X: i,
+						Y: j,
+					})
+				}
+				direction = !direction
+			}
+			direction = false
+			for j, v := range t.Output {
+				for i := range v {
+					if direction {
+						i = len(v) - i - 1
+					}
+					pair.Output = append(pair.Output, Pixel{
+						C: v[i],
+						X: i,
+						Y: j,
+					})
+				}
+				direction = !direction
+			}
+			pairs = append(pairs, pair)
+		}
+	}
+
 	process := func(sample matrix.Sample) ([][]float64, []int, []matrix.Matrix) {
 		x1 := sample.Vars[0][0].Sample()
 		y1 := sample.Vars[0][1].Sample()
@@ -404,34 +442,24 @@ func Encdec() {
 
 		rawData := make([][]float64, 0, 8)
 		classes := make([]int, 0, 8)
-		for class, set := range sets[:Size] {
-			for _, t := range set.Train {
-				output := matrix.NewZeroMatrix(Output, 1)
-				direction := false
-				for j, v := range t.Input {
-					for i := range v {
-						s := v[i]
-						if direction {
-							s = v[len(v)-i-1]
-						}
-						input := matrix.NewZeroMatrix(Input, 1)
-						input.Data[s] = 1
-						input.Data[10+i] = 1
-						input.Data[10+30+j] = 1
-						in := matrix.NewMatrix(Input+Output, 1)
-						in.Data = append(in.Data, input.Data...)
-						in.Data = append(in.Data, output.Data...)
-						output = w2.MulT(w1.MulT(in).Add(b1).Everett()).Add(b2).Sigmoid()
-						direction = !direction
-					}
-				}
-				data := make([]float64, 0, 7)
-				for _, value := range output.Data {
-					data = append(data, float64(value))
-				}
-				rawData = append(rawData, data)
-				classes = append(classes, class)
+		for _, pair := range pairs {
+			output := matrix.NewZeroMatrix(Output, 1)
+			for _, p := range pair.Input {
+				input := matrix.NewZeroMatrix(Input, 1)
+				input.Data[p.C] = 1
+				input.Data[10+p.X] = 1
+				input.Data[10+30+p.Y] = 1
+				in := matrix.NewMatrix(Input+Output, 1)
+				in.Data = append(in.Data, input.Data...)
+				in.Data = append(in.Data, output.Data...)
+				output = w2.MulT(w1.MulT(in).Add(b1).Everett()).Add(b2).Sigmoid()
 			}
+			data := make([]float64, 0, 7)
+			for _, value := range output.Data {
+				data = append(data, float64(value))
+			}
+			rawData = append(rawData, data)
+			classes = append(classes, pair.Class)
 		}
 
 		meta := matrix.NewMatrix(len(rawData), len(rawData), make([]float32, len(rawData)*len(rawData))...)
@@ -597,31 +625,21 @@ func Encdec() {
 	fmt.Println("sumBA", sumBA)
 
 	outputs := []matrix.Matrix{}
-	for _, set := range sets[:Size] {
-		for _, t := range set.Train {
-			output := matrix.NewZeroMatrix(Output, 1)
-			direction := false
-			for j, v := range t.Input {
-				for i := range v {
-					s := v[i]
-					if direction {
-						s = v[len(v)-i-1]
-					}
-					input := matrix.NewZeroMatrix(Input, 1)
-					input.Data[s] = 1
-					input.Data[10+i] = 1
-					input.Data[10+30+j] = 1
-					in := matrix.NewMatrix(Input+Output, 1)
-					in.Data = append(in.Data, input.Data...)
-					in.Data = append(in.Data, output.Data...)
-					output = params[2].MulT(params[0].MulT(in).Add(params[1]).Everett()).Add(params[3]).Sigmoid()
-					direction = !direction
-				}
-			}
-			data := matrix.NewMatrix(Output, 1)
-			data.Data = append(data.Data, output.Data...)
-			outputs = append(outputs, data)
+	for _, pair := range pairs {
+		output := matrix.NewZeroMatrix(Output, 1)
+		for _, p := range pair.Input {
+			input := matrix.NewZeroMatrix(Input, 1)
+			input.Data[p.C] = 1
+			input.Data[10+p.X] = 1
+			input.Data[10+30+p.Y] = 1
+			in := matrix.NewMatrix(Input+Output, 1)
+			in.Data = append(in.Data, input.Data...)
+			in.Data = append(in.Data, output.Data...)
+			output = params[2].MulT(params[0].MulT(in).Add(params[1]).Everett()).Add(params[3]).Sigmoid()
 		}
+		data := matrix.NewMatrix(Output, 1)
+		data.Data = append(data.Data, output.Data...)
+		outputs = append(outputs, data)
 	}
 	processDecoder := func(sample matrix.Sample) (float64, []matrix.Matrix) {
 		x1 := sample.Vars[0][0].Sample()
@@ -646,40 +664,28 @@ func Encdec() {
 		params := []matrix.Matrix{w1, b1, w2, b2}
 
 		cost := 0.0
-		pair := 0
-		for _, set := range sets[:Size] {
-			for _, t := range set.Train {
-				output := matrix.NewZeroMatrix(Input+Output, 1)
-				copy(output.Data[Input:], outputs[pair].Data)
-				direction := false
-				loss, count := 0.0, 0.0
-				for j, v := range t.Output {
-					for i := range v {
-						s := v[i]
-						if direction {
-							s = v[len(v)-i-1]
-						}
-						input := matrix.NewZeroMatrix(Input, 1)
-						input.Data[s] = 1
-						input.Data[10+i] = 1
-						input.Data[10+30+j] = 1
-						in := matrix.NewMatrix(Output, 1)
-						in.Data = append(in.Data, output.Data[Input:]...)
-						if j > 0 || i > 0 {
-							in = in.Sigmoid()
-						}
-						output = w2.MulT(w1.MulT(in).Add(b1).Everett()).Add(b2)
-						for k := range output.Data[:Input] {
-							diff := float64(input.Data[k]) - float64(output.Data[k])
-							loss += diff * diff
-							count++
-						}
-						direction = !direction
-					}
+		for k, pair := range pairs {
+			output := matrix.NewZeroMatrix(Input+Output, 1)
+			copy(output.Data[Input:], outputs[k].Data)
+			loss, count := 0.0, 0.0
+			for i, p := range pair.Output {
+				input := matrix.NewZeroMatrix(Input, 1)
+				input.Data[p.C] = 1
+				input.Data[10+p.X] = 1
+				input.Data[10+30+p.Y] = 1
+				in := matrix.NewMatrix(Output, 1)
+				in.Data = append(in.Data, output.Data[Input:]...)
+				if i > 0 {
+					in = in.Sigmoid()
 				}
-				cost += loss / count
-				pair++
+				output = w2.MulT(w1.MulT(in).Add(b1).Everett()).Add(b2)
+				for k := range output.Data[:Input] {
+					diff := float64(input.Data[k]) - float64(output.Data[k])
+					loss += diff * diff
+					count++
+				}
 			}
+			cost += loss / count
 		}
 		cost /= float64(Size)
 		return cost, params
