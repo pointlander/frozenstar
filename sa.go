@@ -109,12 +109,24 @@ func SA() {
 		return offset, target, opt
 	}
 	offset, target, opt := get(0)
-	optimizer := matrix.NewOptimizer(&rng, 8, .1, 1, func(samples []matrix.Sample, x ...matrix.Matrix) {
+	optimizer := matrix.NewOptimizer(&rng, 8, .1, 4, func(samples []matrix.Sample, x ...matrix.Matrix) {
 		for s, sample := range samples {
 			x1 := sample.Vars[0][0].Sample()
 			y1 := sample.Vars[0][1].Sample()
 			z1 := sample.Vars[0][2].Sample()
 			w1 := x1.Add(y1.H(z1))
+			x2 := sample.Vars[1][0].Sample()
+			y2 := sample.Vars[1][1].Sample()
+			z2 := sample.Vars[1][2].Sample()
+			q := x2.Add(y2.H(z2))
+			x3 := sample.Vars[2][0].Sample()
+			y3 := sample.Vars[2][1].Sample()
+			z3 := sample.Vars[2][2].Sample()
+			k := x3.Add(y3.H(z3))
+			x4 := sample.Vars[3][0].Sample()
+			y4 := sample.Vars[3][1].Sample()
+			z4 := sample.Vars[3][2].Sample()
+			v := x4.Add(y4.H(z4))
 			for j := range opt {
 				for k, value := range w1.Data {
 					bit := 1.0
@@ -126,14 +138,14 @@ func SA() {
 			}
 			sum := 0.0
 			for i := range opt {
-				entropy := matrix.SelfEntropy64(opt[i], opt[i], opt[i])
+				entropy := matrix.SelfEntropy64(q.MulT(opt[i]), k.MulT(opt[i]), v.MulT(opt[i]))
 				for _, e := range entropy {
 					sum += e
 				}
 			}
 			samples[s].Cost = sum
 		}
-	}, matrix.NewCoord(Input*target, 1))
+	}, matrix.NewCoord(Input*target, 1), matrix.NewCoord(Input, Input), matrix.NewCoord(Input, Input), matrix.NewCoord(Input, Input))
 	var sample matrix.Sample
 	for i := 0; i < 33; i++ {
 		sample = optimizer.Iterate()
