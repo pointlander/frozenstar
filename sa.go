@@ -15,7 +15,7 @@ func SA() {
 	rng := matrix.Rand(1)
 
 	sets := Load()
-	get := func(s int) (offset, target int, opt []matrix.Matrix) {
+	get := func(s int) (w, h, offset, target int, opt []matrix.Matrix) {
 		train, test := make([]Pair, 0, 8), make([]Pair, 0, 8)
 		set := sets[s]
 		for _, t := range set.Train {
@@ -70,6 +70,8 @@ func SA() {
 		for i := range opt {
 			offset = len(train[i].Input) + len(train[i].Output) + len(test[0].Input)
 			target = len(test[0].Output)
+			h = len(set.Test[0].Output)
+			w = len(set.Test[0].Output[0])
 			opt[i] = matrix.NewMatrix(Input, offset+target)
 		}
 		for i, pair := range train {
@@ -106,9 +108,9 @@ func SA() {
 				opt[i].Data = append(opt[i].Data, input.Data...)
 			}
 		}
-		return offset, target, opt
+		return w, h, offset, target, opt
 	}
-	offset, target, opt := get(0)
+	w, h, offset, target, opt := get(0)
 	optimizer := matrix.NewOptimizer(&rng, 8, .1, 4, func(samples []matrix.Sample, x ...matrix.Matrix) {
 		for s, sample := range samples {
 			x1 := sample.Vars[0][0].Sample()
@@ -151,6 +153,46 @@ func SA() {
 		sample = optimizer.Iterate()
 		fmt.Println(i, sample.Cost)
 		cost := sample.Cost
+		grid := make([][]byte, h)
+		for j := range grid {
+			grid[j] = make([]byte, w)
+		}
+		x1 := sample.Vars[0][0].Sample()
+		y1 := sample.Vars[0][1].Sample()
+		z1 := sample.Vars[0][2].Sample()
+		w1 := x1.Add(y1.H(z1))
+		for offset := 0; offset < len(w1.Data); offset += Input {
+			max, color := float32(0.0), 0
+			cc := w1.Data[offset : offset+10]
+			for j := range cc {
+				for cc[j] > max {
+					max, color = cc[j], j
+				}
+			}
+			xx := w1.Data[offset+10 : offset+10+w]
+			max = 0
+			x := 0
+			for j := range xx {
+				for xx[j] > max {
+					max, x = xx[j], j
+				}
+			}
+			yy := w1.Data[offset+10+w : offset+10+w+h]
+			max = 0
+			y := 0
+			for j := range yy {
+				for yy[j] > max {
+					max, y = yy[j], j
+				}
+			}
+			grid[y][x] = byte(color)
+		}
+		for _, v := range grid {
+			for _, value := range v {
+				fmt.Printf("%d ", value)
+			}
+			fmt.Println()
+		}
 		if cost < 0 {
 			cost = 0
 			break
