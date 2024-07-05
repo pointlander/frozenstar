@@ -153,24 +153,28 @@ func SA() {
 		sample = optimizer.Iterate()
 		fmt.Println(i, sample.Cost)
 		cost := sample.Cost
-		grid := make([][]byte, h)
+		type Result struct {
+			Color  byte
+			Signal float32
+		}
+		grid := make([][]Result, h)
 		for j := range grid {
-			grid[j] = make([]byte, w)
+			grid[j] = make([]Result, w)
 		}
 		x1 := sample.Vars[0][0].Sample()
 		y1 := sample.Vars[0][1].Sample()
 		z1 := sample.Vars[0][2].Sample()
 		w1 := x1.Add(y1.H(z1))
 		for offset := 0; offset < len(w1.Data); offset += Input {
-			max, color := float32(0.0), 0
+			maxColor, color := float32(0.0), 0
 			cc := w1.Data[offset : offset+10]
 			for j := range cc {
-				for cc[j] > max {
-					max, color = cc[j], j
+				for cc[j] > maxColor {
+					maxColor, color = cc[j], j
 				}
 			}
 			xx := w1.Data[offset+10 : offset+10+w]
-			max = 0
+			max := float32(0.0)
 			x := 0
 			for j := range xx {
 				for xx[j] > max {
@@ -185,11 +189,14 @@ func SA() {
 					max, y = yy[j], j
 				}
 			}
-			grid[y][x] = byte(color)
+			if maxColor > grid[y][x].Signal {
+				grid[y][x].Signal = maxColor
+				grid[y][x].Color = byte(color)
+			}
 		}
 		for _, v := range grid {
 			for _, value := range v {
-				fmt.Printf("%d ", value)
+				fmt.Printf("%d ", value.Color)
 			}
 			fmt.Println()
 		}
