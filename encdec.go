@@ -27,13 +27,21 @@ func Encdec() {
 			direction := false
 			pair := Pair{
 				Class: s,
+				Input: Image{
+					W: len(t.Input[0]),
+					H: len(t.Input),
+				},
+				Output: Image{
+					W: len(t.Output[0]),
+					H: len(t.Output),
+				},
 			}
 			for j, v := range t.Input {
 				for i := range v {
 					if direction {
 						i = len(v) - i - 1
 					}
-					pair.Input = append(pair.Input, Pixel{
+					pair.Input.I = append(pair.Input.I, Pixel{
 						C: v[i],
 						X: i,
 						Y: j,
@@ -47,7 +55,7 @@ func Encdec() {
 					if direction {
 						i = len(v) - i - 1
 					}
-					pair.Output = append(pair.Output, Pixel{
+					pair.Output.I = append(pair.Output.I, Pixel{
 						C: v[i],
 						X: i,
 						Y: j,
@@ -85,7 +93,7 @@ func Encdec() {
 		classes := make([]int, 0, 8)
 		for _, pair := range pairs {
 			output := matrix.NewZeroMatrix(Output, 1)
-			for _, p := range pair.Input {
+			for _, p := range pair.Input.I {
 				input := matrix.NewZeroMatrix(Input, 1)
 				input.Data[p.C] = 1
 				input.Data[10+p.X] = 1
@@ -268,7 +276,7 @@ func Encdec() {
 	outputs := []matrix.Matrix{}
 	for _, pair := range pairs {
 		output := matrix.NewZeroMatrix(Output, 1)
-		for _, p := range pair.Input {
+		for _, p := range pair.Input.I {
 			input := matrix.NewZeroMatrix(Input, 1)
 			input.Data[p.C] = 1
 			input.Data[10+p.X] = 1
@@ -309,7 +317,7 @@ func Encdec() {
 			output := matrix.NewZeroMatrix(Input+Output, 1)
 			copy(output.Data[Input:], outputs[k].Data)
 			loss, count := 0.0, 0.0
-			for i, p := range pair.Output {
+			for i, p := range pair.Output.I {
 				input := matrix.NewZeroMatrix(Input, 1)
 				input.Data[p.C] = 1
 				input.Data[10+p.X] = 1

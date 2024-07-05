@@ -69,11 +69,18 @@ type Pixel struct {
 	Y int
 }
 
+// Image is an image
+type Image struct {
+	W int
+	H int
+	I []Pixel
+}
+
 // Pair is an input output pair
 type Pair struct {
 	Class  int
-	Input  []Pixel
-	Output []Pixel
+	Input  Image
+	Output Image
 }
 
 var (

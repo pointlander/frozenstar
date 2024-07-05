@@ -11,21 +11,46 @@ import (
 	"github.com/pointlander/matrix"
 )
 
+// Opt is an optimization
+type Opt struct {
+	Opt    matrix.Matrix
+	Input  Pair
+	Output Pair
+}
+
+// TargetOffset is the target offset
+func (o Opt) TargetOffset() int {
+	return len(o.Input.Input.I) + len(o.Input.Output.I) + len(o.Output.Input.I)
+}
+
+// TargetSize is the size of the target
+func (o Opt) TargetSize() int {
+	return len(o.Output.Output.I)
+}
+
 // SA is self attention mode
 func SA() {
 	rng := matrix.Rand(1)
 
 	sets := Load()
-	get := func(s int) (w, h, offset, target int, opt []matrix.Matrix) {
+	get := func(s int) (opt []Opt) {
 		train, test := make([]Pair, 0, 8), make([]Pair, 0, 8)
 		set := sets[s]
 		for _, t := range set.Train {
 			pair := Pair{
 				Class: s,
+				Input: Image{
+					W: len(t.Input[0]),
+					H: len(t.Input),
+				},
+				Output: Image{
+					W: len(t.Output[0]),
+					H: len(t.Output),
+				},
 			}
 			for j, v := range t.Input {
 				for i := range v {
-					pair.Input = append(pair.Input, Pixel{
+					pair.Input.I = append(pair.Input.I, Pixel{
 						C: v[i],
 						X: i,
 						Y: j,
@@ -34,7 +59,7 @@ func SA() {
 			}
 			for j, v := range t.Output {
 				for i := range v {
-					pair.Output = append(pair.Output, Pixel{
+					pair.Output.I = append(pair.Output.I, Pixel{
 						C: v[i],
 						X: i,
 						Y: j,
@@ -46,10 +71,18 @@ func SA() {
 		for _, t := range set.Test {
 			pair := Pair{
 				Class: s,
+				Input: Image{
+					W: len(t.Input[0]),
+					H: len(t.Input),
+				},
+				Output: Image{
+					W: len(t.Output[0]),
+					H: len(t.Output),
+				},
 			}
 			for j, v := range t.Input {
 				for i := range v {
-					pair.Input = append(pair.Input, Pixel{
+					pair.Input.I = append(pair.Input.I, Pixel{
 						C: v[i],
 						X: i,
 						Y: j,
@@ -58,7 +91,7 @@ func SA() {
 			}
 			for j, v := range t.Output {
 				for i := range v {
-					pair.Output = append(pair.Output, Pixel{
+					pair.Output.I = append(pair.Output.I, Pixel{
 						C: v[i],
 						X: i,
 						Y: j,
@@ -67,54 +100,37 @@ func SA() {
 			}
 			test = append(test, pair)
 		}
-		opt = make([]matrix.Matrix, len(train))
+		opt = make([]Opt, len(train))
 		for i := range opt {
-			offset = len(train[i].Input) + len(train[i].Output) + len(test[0].Input)
-			target = len(test[0].Output)
-			h = len(set.Test[0].Output)
-			w = len(set.Test[0].Output[0])
-			opt[i] = matrix.NewMatrix(Input, offset+target)
+			opt[i].Input = train[i]
+			opt[i].Output = test[0]
+			opt[i].Opt = matrix.NewZeroMatrix(Input, opt[i].TargetOffset()+opt[i].TargetSize())
 		}
 		for i, pair := range train {
-			for _, p := range pair.Input {
-				input := matrix.NewZeroMatrix(Input, 1)
-				input.Data[p.C] = 1
-				input.Data[10+p.X] = 1
-				input.Data[10+30+p.Y] = 1
-				opt[i].Data = append(opt[i].Data, input.Data...)
+			for _, p := range pair.Input.I {
+				opt[i].Opt.Data[p.C] = 1
+				opt[i].Opt.Data[10+p.X] = 1
+				opt[i].Opt.Data[10+30+p.Y] = 1
 			}
-			for _, p := range pair.Output {
-				input := matrix.NewZeroMatrix(Input, 1)
-				input.Data[p.C] = 1
-				input.Data[10+p.X] = 1
-				input.Data[10+30+p.Y] = 1
-				input.Data[10+30+30] = 1
-				opt[i].Data = append(opt[i].Data, input.Data...)
+			for _, p := range pair.Output.I {
+				opt[i].Opt.Data[Input+p.C] = 1
+				opt[i].Opt.Data[Input+10+p.X] = 1
+				opt[i].Opt.Data[Input+10+30+p.Y] = 1
+				opt[i].Opt.Data[Input+10+30+30] = 1
 			}
 
-			for _, p := range test[0].Input {
-				input := matrix.NewZeroMatrix(Input, 1)
-				input.Data[p.C] = 1
-				input.Data[10+p.X] = 1
-				input.Data[10+30+p.Y] = 1
-				opt[i].Data = append(opt[i].Data, input.Data...)
-			}
-			for _, p := range test[0].Output {
-				input := matrix.NewZeroMatrix(Input, 1)
-				_ = p
-				/*input.Data[p.C] = 1
-				input.Data[10+p.X] = 1
-				input.Data[10+30+p.Y] = 1
-				input.Data[10+30+30] = 1*/
-				opt[i].Data = append(opt[i].Data, input.Data...)
+			for _, p := range test[0].Input.I {
+				opt[i].Opt.Data[2*Input+p.C] = 1
+				opt[i].Opt.Data[2*Input+10+p.X] = 1
+				opt[i].Opt.Data[2*Input+10+30+p.Y] = 1
 			}
 		}
-		return w, h, offset, target, opt
+		return opt
 	}
 
 	done := make(chan bool, 8)
 	process := func(sample *matrix.Sample) {
-		_, _, offset, _, opt := get(0)
+		opt := get(0)
 		x1 := sample.Vars[0][0].Sample()
 		y1 := sample.Vars[0][1].Sample()
 		z1 := sample.Vars[0][2].Sample()
@@ -132,17 +148,18 @@ func SA() {
 		z4 := sample.Vars[3][2].Sample()
 		v := x4.Add(y4.H(z4))
 		for j := range opt {
+			offset := len(opt[j].Input.Input.I) + len(opt[j].Input.Output.I) + len(opt[j].Output.Input.I)
 			for k, value := range w1.Data {
 				bit := 1.0
 				if value < 0.0 {
 					bit = 0.0
 				}
-				opt[j].Data[Input*offset+k] = float32(bit)
+				opt[j].Opt.Data[Input*offset+k] = float32(bit)
 			}
 		}
 		sum := 0.0
 		for i := range opt {
-			entropy := matrix.SelfEntropy64(q.MulT(opt[i]), k.MulT(opt[i]), v.MulT(opt[i]))
+			entropy := matrix.SelfEntropy64(q.MulT(opt[i].Opt), k.MulT(opt[i].Opt), v.MulT(opt[i].Opt))
 			for _, e := range entropy {
 				sum += e
 			}
@@ -150,7 +167,7 @@ func SA() {
 		sample.Cost = sum
 		done <- true
 	}
-	w, h, _, target, _ := get(0)
+	opt := get(0)
 	optimizer := matrix.NewOptimizer(&rng, 8, .1, 4, func(samples []matrix.Sample, x ...matrix.Matrix) {
 		index, flight, cpus := 0, 0, runtime.NumCPU()
 		for flight < cpus && index < len(samples) {
@@ -172,7 +189,8 @@ func SA() {
 			fmt.Printf(".")
 		}
 		fmt.Printf("\n")
-	}, matrix.NewCoord(Input*target, 1), matrix.NewCoord(Input, Input), matrix.NewCoord(Input, Input), matrix.NewCoord(Input, Input))
+	}, matrix.NewCoord(Input*opt[0].TargetSize(), 1), matrix.NewCoord(Input, Input), matrix.NewCoord(Input, Input), matrix.NewCoord(Input, Input))
+	w, h := opt[0].Output.Output.W, opt[0].Output.Output.H
 	var sample matrix.Sample
 	for i := 0; i < 33; i++ {
 		sample = optimizer.Iterate()
@@ -191,6 +209,7 @@ func SA() {
 		z1 := sample.Vars[0][2].Sample()
 		w1 := x1.Add(y1.H(z1))
 		for offset := 0; offset < len(w1.Data); offset += Input {
+
 			maxColor, color := float32(0.0), 0
 			cc := w1.Data[offset : offset+10]
 			for j := range cc {
