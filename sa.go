@@ -190,7 +190,7 @@ func SA() {
 			fmt.Printf(".")
 		}
 		fmt.Printf("\n")
-	}, matrix.NewCoord(Input*opt[0].TargetSize(), 1), matrix.NewCoord(Input, Input), matrix.NewCoord(Input, Input), matrix.NewCoord(Input, Input))
+	}, matrix.NewCoord(Input*opt[0].TargetSize(), 1), matrix.NewCoord(Input, 2*Input), matrix.NewCoord(Input, 2*Input), matrix.NewCoord(Input, 2*Input))
 	w, h := opt[0].Output.Output.W, opt[0].Output.Output.H
 	var sample matrix.Sample
 	for i := 0; i < 33; i++ {
