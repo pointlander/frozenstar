@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 	"runtime"
+	"sort"
 
 	"github.com/pointlander/matrix"
 )
@@ -196,9 +197,17 @@ func SA() {
 		sample = optimizer.Iterate()
 		fmt.Println(i, sample.Cost)
 		cost := sample.Cost
+		type Coord struct {
+			Signal float32
+			Coord  int
+		}
 		type Result struct {
 			Color  byte
 			Signal float32
+			IX     int
+			IY     int
+			X      []Coord
+			Y      []Coord
 		}
 		grid := make([][]Result, h)
 		for j := range grid {
@@ -217,24 +226,84 @@ func SA() {
 				}
 			}
 			xx := w1.Data[offset+10 : offset+10+w]
-			maxX := float32(0.0)
-			x := 0
-			for j := range xx {
-				for xx[j] > maxX {
-					maxX, x = xx[j], j
-				}
+			x := make([]Coord, w)
+			for j, value := range xx {
+				x[j].Coord = j
+				x[j].Signal = value
 			}
+			sort.Slice(x, func(i, j int) bool {
+				return x[i].Signal > x[j].Signal
+			})
 			yy := w1.Data[offset+10+w : offset+10+w+h]
-			maxY := float32(0.0)
-			y := 0
-			for j := range yy {
-				for yy[j] > maxY {
-					maxY, y = yy[j], j
-				}
+			y := make([]Coord, h)
+			for j, value := range yy {
+				y[j].Coord = j
+				y[j].Signal = value
 			}
-			if maxColor > grid[y][x].Signal {
-				grid[y][x].Signal = maxColor
-				grid[y][x].Color = byte(color)
+			sort.Slice(y, func(i, j int) bool {
+				return y[i].Signal > y[j].Signal
+			})
+			result := Result{
+				Color:  byte(color),
+				Signal: maxColor,
+				IX:     0,
+				IY:     0,
+				X:      x,
+				Y:      y,
+			}
+
+			var apply func(result Result) bool
+			apply = func(result Result) bool {
+				x, y := result.X[result.IX].Coord, result.Y[result.IY].Coord
+				if result.Signal > grid[y][x].Signal {
+					if grid[y][x].Signal != 0 {
+						for {
+							sx := false
+							if grid[y][x].IX < w-1 {
+								sx = true
+								grid[y][x].IX++
+								if apply(grid[y][x]) {
+									break
+								}
+							}
+							sy := false
+							if grid[y][x].IY < h-1 {
+								sy = true
+								grid[y][x].IY++
+								if apply(grid[y][x]) {
+									break
+								}
+							}
+							if sx && sy {
+								break
+							}
+						}
+					}
+					grid[y][x] = result
+					return true
+				}
+				return false
+			}
+			for {
+				sx := false
+				if result.IX < w-1 {
+					sx = true
+					result.IX++
+					if apply(result) {
+						break
+					}
+				}
+				sy := false
+				if result.IY < h-1 {
+					sy = true
+					result.IY++
+					if apply(result) {
+						break
+					}
+				}
+				if sx && sy {
+					break
+				}
 			}
 		}
 		index := 0
