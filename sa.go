@@ -238,12 +238,23 @@ func SA() {
 				grid[y][x].Color = byte(color)
 			}
 		}
+		index := 0
+		sum, total := 0.0, 0.0
 		for _, v := range grid {
 			for _, value := range v {
-				fmt.Printf("%d ", value.Color)
+				color := opt[0].Output.Output.I[index].C
+				if color == value.Color {
+					sum++
+					fmt.Printf("* ")
+				} else {
+					fmt.Printf("%d ", value.Color)
+				}
+				index++
+				total++
 			}
 			fmt.Println()
 		}
+		fmt.Println("accuracy", sum/total)
 		if cost < 0 {
 			cost = 0
 			break
