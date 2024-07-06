@@ -148,6 +148,14 @@ func SA() {
 		y4 := sample.Vars[3][1].Sample()
 		z4 := sample.Vars[3][2].Sample()
 		v := x4.Add(y4.H(z4))
+		x5 := sample.Vars[4][0].Sample()
+		y5 := sample.Vars[4][1].Sample()
+		z5 := sample.Vars[4][2].Sample()
+		w2 := x5.Add(y5.H(z5))
+		x6 := sample.Vars[5][0].Sample()
+		y6 := sample.Vars[5][1].Sample()
+		z6 := sample.Vars[5][2].Sample()
+		b2 := x6.Add(y6.H(z6))
 		for j := range opt {
 			offset := len(opt[j].Input.Input.I) + len(opt[j].Input.Output.I) + len(opt[j].Output.Input.I)
 			for k, value := range w1.Data {
@@ -160,7 +168,8 @@ func SA() {
 		}
 		sum := 0.0
 		for i := range opt {
-			entropy := matrix.SelfEntropy64(q.MulT(opt[i].Opt), k.MulT(opt[i].Opt), v.MulT(opt[i].Opt))
+			output := w2.MulT(opt[i].Opt).Add(b2).Sigmoid()
+			entropy := matrix.SelfEntropy64(q.MulT(output), k.MulT(output), v.MulT(output))
 			for _, e := range entropy {
 				sum += e
 			}
@@ -169,7 +178,7 @@ func SA() {
 		done <- true
 	}
 	opt := get(0)
-	optimizer := matrix.NewOptimizer(&rng, 8, .1, 4, func(samples []matrix.Sample, x ...matrix.Matrix) {
+	optimizer := matrix.NewOptimizer(&rng, 8, .1, 6, func(samples []matrix.Sample, x ...matrix.Matrix) {
 		index, flight, cpus := 0, 0, runtime.NumCPU()
 		for flight < cpus && index < len(samples) {
 			go process(&samples[index])
@@ -190,7 +199,9 @@ func SA() {
 			fmt.Printf(".")
 		}
 		fmt.Printf("\n")
-	}, matrix.NewCoord(Input*opt[0].TargetSize(), 1), matrix.NewCoord(Input, 2*Input), matrix.NewCoord(Input, 2*Input), matrix.NewCoord(Input, 2*Input))
+	}, matrix.NewCoord(Input*opt[0].TargetSize(), 1),
+		matrix.NewCoord(Input, 2*Input), matrix.NewCoord(Input, 2*Input), matrix.NewCoord(Input, 2*Input),
+		matrix.NewCoord(Input, Input), matrix.NewCoord(Input, 1))
 	w, h := opt[0].Output.Output.W, opt[0].Output.Output.H
 	var sample matrix.Sample
 	for i := 0; i < 33; i++ {
