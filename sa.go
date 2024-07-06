@@ -209,7 +209,6 @@ func SA() {
 		z1 := sample.Vars[0][2].Sample()
 		w1 := x1.Add(y1.H(z1))
 		for offset := 0; offset < len(w1.Data); offset += Input {
-
 			maxColor, color := float32(0.0), 0
 			cc := w1.Data[offset : offset+10]
 			for j := range cc {
@@ -218,19 +217,19 @@ func SA() {
 				}
 			}
 			xx := w1.Data[offset+10 : offset+10+w]
-			max := float32(0.0)
+			maxX := float32(0.0)
 			x := 0
 			for j := range xx {
-				for xx[j] > max {
-					max, x = xx[j], j
+				for xx[j] > maxX {
+					maxX, x = xx[j], j
 				}
 			}
 			yy := w1.Data[offset+10+w : offset+10+w+h]
-			max = 0
+			maxY := float32(0.0)
 			y := 0
 			for j := range yy {
-				for yy[j] > max {
-					max, y = yy[j], j
+				for yy[j] > maxY {
+					maxY, y = yy[j], j
 				}
 			}
 			if maxColor > grid[y][x].Signal {
