@@ -29,109 +29,110 @@ func (o Opt) TargetSize() int {
 	return len(o.Output.Output.I)
 }
 
+// GetTrainingData gets the training data
+func GetTrainingData(sets []Set, s int) (opt []Opt) {
+	train, test := make([]Pair, 0, 8), make([]Pair, 0, 8)
+	set := sets[s]
+	for _, t := range set.Train {
+		pair := Pair{
+			Class: s,
+			Input: Image{
+				W: len(t.Input[0]),
+				H: len(t.Input),
+			},
+			Output: Image{
+				W: len(t.Output[0]),
+				H: len(t.Output),
+			},
+		}
+		for j, v := range t.Input {
+			for i := range v {
+				pair.Input.I = append(pair.Input.I, Pixel{
+					C: v[i],
+					X: i,
+					Y: j,
+				})
+			}
+		}
+		for j, v := range t.Output {
+			for i := range v {
+				pair.Output.I = append(pair.Output.I, Pixel{
+					C: v[i],
+					X: i,
+					Y: j,
+				})
+			}
+		}
+		train = append(train, pair)
+	}
+	for _, t := range set.Test {
+		pair := Pair{
+			Class: s,
+			Input: Image{
+				W: len(t.Input[0]),
+				H: len(t.Input),
+			},
+			Output: Image{
+				W: len(t.Output[0]),
+				H: len(t.Output),
+			},
+		}
+		for j, v := range t.Input {
+			for i := range v {
+				pair.Input.I = append(pair.Input.I, Pixel{
+					C: v[i],
+					X: i,
+					Y: j,
+				})
+			}
+		}
+		for j, v := range t.Output {
+			for i := range v {
+				pair.Output.I = append(pair.Output.I, Pixel{
+					C: v[i],
+					X: i,
+					Y: j,
+				})
+			}
+		}
+		test = append(test, pair)
+	}
+	opt = make([]Opt, len(train))
+	for i := range opt {
+		opt[i].Input = train[i]
+		opt[i].Output = test[0]
+		opt[i].Opt = matrix.NewZeroMatrix(Input, opt[i].TargetOffset()+opt[i].TargetSize())
+	}
+	for i, pair := range train {
+		for _, p := range pair.Input.I {
+			opt[i].Opt.Data[p.C] = 1
+			opt[i].Opt.Data[10+p.X] = 1
+			opt[i].Opt.Data[10+30+p.Y] = 1
+		}
+		for _, p := range pair.Output.I {
+			opt[i].Opt.Data[Input+p.C] = 1
+			opt[i].Opt.Data[Input+10+p.X] = 1
+			opt[i].Opt.Data[Input+10+30+p.Y] = 1
+			opt[i].Opt.Data[Input+10+30+30] = 1
+		}
+
+		for _, p := range test[0].Input.I {
+			opt[i].Opt.Data[2*Input+p.C] = 1
+			opt[i].Opt.Data[2*Input+10+p.X] = 1
+			opt[i].Opt.Data[2*Input+10+30+p.Y] = 1
+		}
+	}
+	return opt
+}
+
 // SA is self attention mode
 func SA() {
 	rng := matrix.Rand(1)
 
 	sets := Load()
-	get := func(s int) (opt []Opt) {
-		train, test := make([]Pair, 0, 8), make([]Pair, 0, 8)
-		set := sets[s]
-		for _, t := range set.Train {
-			pair := Pair{
-				Class: s,
-				Input: Image{
-					W: len(t.Input[0]),
-					H: len(t.Input),
-				},
-				Output: Image{
-					W: len(t.Output[0]),
-					H: len(t.Output),
-				},
-			}
-			for j, v := range t.Input {
-				for i := range v {
-					pair.Input.I = append(pair.Input.I, Pixel{
-						C: v[i],
-						X: i,
-						Y: j,
-					})
-				}
-			}
-			for j, v := range t.Output {
-				for i := range v {
-					pair.Output.I = append(pair.Output.I, Pixel{
-						C: v[i],
-						X: i,
-						Y: j,
-					})
-				}
-			}
-			train = append(train, pair)
-		}
-		for _, t := range set.Test {
-			pair := Pair{
-				Class: s,
-				Input: Image{
-					W: len(t.Input[0]),
-					H: len(t.Input),
-				},
-				Output: Image{
-					W: len(t.Output[0]),
-					H: len(t.Output),
-				},
-			}
-			for j, v := range t.Input {
-				for i := range v {
-					pair.Input.I = append(pair.Input.I, Pixel{
-						C: v[i],
-						X: i,
-						Y: j,
-					})
-				}
-			}
-			for j, v := range t.Output {
-				for i := range v {
-					pair.Output.I = append(pair.Output.I, Pixel{
-						C: v[i],
-						X: i,
-						Y: j,
-					})
-				}
-			}
-			test = append(test, pair)
-		}
-		opt = make([]Opt, len(train))
-		for i := range opt {
-			opt[i].Input = train[i]
-			opt[i].Output = test[0]
-			opt[i].Opt = matrix.NewZeroMatrix(Input, opt[i].TargetOffset()+opt[i].TargetSize())
-		}
-		for i, pair := range train {
-			for _, p := range pair.Input.I {
-				opt[i].Opt.Data[p.C] = 1
-				opt[i].Opt.Data[10+p.X] = 1
-				opt[i].Opt.Data[10+30+p.Y] = 1
-			}
-			for _, p := range pair.Output.I {
-				opt[i].Opt.Data[Input+p.C] = 1
-				opt[i].Opt.Data[Input+10+p.X] = 1
-				opt[i].Opt.Data[Input+10+30+p.Y] = 1
-				opt[i].Opt.Data[Input+10+30+30] = 1
-			}
-
-			for _, p := range test[0].Input.I {
-				opt[i].Opt.Data[2*Input+p.C] = 1
-				opt[i].Opt.Data[2*Input+10+p.X] = 1
-				opt[i].Opt.Data[2*Input+10+30+p.Y] = 1
-			}
-		}
-		return opt
-	}
-
 	done := make(chan bool, 8)
 	process := func(sample *matrix.Sample) {
-		opt := get(0)
+		opt := GetTrainingData(sets, 0)
 		x1 := sample.Vars[0][0].Sample()
 		y1 := sample.Vars[0][1].Sample()
 		z1 := sample.Vars[0][2].Sample()
@@ -177,7 +178,7 @@ func SA() {
 		sample.Cost = sum
 		done <- true
 	}
-	opt := get(0)
+	opt := GetTrainingData(sets, 0)
 	optimizer := matrix.NewOptimizer(&rng, 8, .1, 6, func(samples []matrix.Sample, x ...matrix.Matrix) {
 		index, flight, cpus := 0, 0, runtime.NumCPU()
 		for flight < cpus && index < len(samples) {
