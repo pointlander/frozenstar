@@ -157,15 +157,44 @@ func SA() {
 		y6 := sample.Vars[5][1].Sample()
 		z6 := sample.Vars[5][2].Sample()
 		b2 := x6.Add(y6.H(z6))
+		w, h := opt[0].Output.Output.W, opt[0].Output.Output.H
 		for j := range opt {
 			offset := len(opt[j].Input.Input.I) + len(opt[j].Input.Output.I) + len(opt[j].Output.Input.I)
-			for k, value := range w1.Data {
+			cc := opt[j].Opt.Data[Input*offset : Input*offset+10]
+			w1CC := w1.Data[:10]
+			maxCC, indexCC := float32(0.0), 0
+			for key, value := range w1CC {
+				if value > maxCC {
+					indexCC, maxCC = key, value
+				}
+			}
+			xx := opt[j].Opt.Data[Input*offset+10 : Input*offset+10+w]
+			w1XX := w1.Data[10 : 10+w]
+			maxXX, indexXX := float32(0.0), 0
+			for key, value := range w1XX {
+				if value > maxXX {
+					indexXX, maxXX = key, value
+				}
+			}
+			yy := opt[j].Opt.Data[Input*offset+10+w : Input*offset+10+w+h]
+			w1YY := w1.Data[10+w : 10+w+h]
+			maxYY, indexYY := float32(0.0), 0
+			for key, value := range w1YY {
+				if value > maxYY {
+					indexYY, maxYY = key, value
+				}
+			}
+			cc[indexCC] = 1
+			xx[indexXX] = 1
+			yy[indexYY] = 1
+			opt[j].Opt.Data[Input*offset+10+w+h] = 1
+			/*for k, value := range w1.Data {
 				bit := 1.0
 				if value < 0.0 {
 					bit = 0.0
 				}
 				opt[j].Opt.Data[Input*offset+k] = float32(bit)
-			}
+			}*/
 		}
 		sum := 0.0
 		for i := range opt {
