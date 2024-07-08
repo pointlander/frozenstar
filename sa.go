@@ -208,7 +208,7 @@ func SA() {
 		done <- true
 	}
 	opt := GetTrainingData(sets, 0)
-	optimizer := matrix.NewOptimizer(&rng, 8, .1, 6, func(samples []matrix.Sample, x ...matrix.Matrix) {
+	optimizer := matrix.NewOptimizer(&rng, 9, .1, 6, func(samples []matrix.Sample, x ...matrix.Matrix) {
 		index, flight, cpus := 0, 0, runtime.NumCPU()
 		for flight < cpus && index < len(samples) {
 			go process(&samples[index])
