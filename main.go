@@ -90,6 +90,8 @@ var (
 	FlagEncdec = flag.Bool("encdec", false, "encoder decoder model")
 	// FlagSA self attention model
 	FlagSA = flag.Bool("sa", false, "self attention model")
+	// FlagAC is an autocoder model
+	FlagAC = flag.Bool("ac", false, "autocoder model")
 )
 
 func main() {
@@ -103,6 +105,9 @@ func main() {
 		return
 	} else if *FlagSA {
 		SA()
+		return
+	} else if *FlagAC {
+		AC()
 		return
 	}
 }
