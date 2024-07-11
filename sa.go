@@ -196,13 +196,6 @@ func SA() {
 				yy[indexYY] = 1
 				opt[j].Opt.Data[Input*offset+10+w+h] = 1
 			}
-			/*for k, value := range w1.Data {
-				bit := 1.0
-				if value < 0.0 {
-					bit = 0.0
-				}
-				opt[j].Opt.Data[Input*offset+k] = float32(bit)
-			}*/
 		}
 		sum := 0.0
 		for i := range opt {
