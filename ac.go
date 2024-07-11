@@ -86,9 +86,10 @@ func AC() {
 		sum := 0.0
 		for i := range opt {
 			output := w2.MulT(opt[i].Opt).Add(b2).Sigmoid()
-			entropy := matrix.SelfEntropy64(q.MulT(output), k.MulT(output), v.MulT(output))
-			for _, e := range entropy {
-				sum += e
+			out := matrix.SelfAttention(q.MulT(output), k.MulT(output), v.MulT(output))
+			for j := 0; j < out.Cols; j++ {
+				diff := out.Data[j] - opt[i].Opt.Data[j]
+				sum += float64(diff * diff)
 			}
 		}
 		sample.Cost = sum
@@ -117,7 +118,7 @@ func AC() {
 		}
 		fmt.Printf("\n")
 	}, matrix.NewCoord(Input*opt[0].TargetSize(), 1),
-		matrix.NewCoord(Input, 2*Input), matrix.NewCoord(Input, 2*Input), matrix.NewCoord(Input, 2*Input),
+		matrix.NewCoord(Input, Input), matrix.NewCoord(Input, Input), matrix.NewCoord(Input, Input),
 		matrix.NewCoord(Input, Input), matrix.NewCoord(Input, 1))
 	w, h := opt[0].Output.Output.W, opt[0].Output.Output.H
 	var sample matrix.Sample
