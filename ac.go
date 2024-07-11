@@ -123,7 +123,7 @@ func AC() {
 			fmt.Printf(".")
 		}
 		fmt.Printf("\n")
-	}, matrix.NewCoord(Input*opt[0].TargetSize(), 1),
+	}, matrix.NewCoord(Input, opt[0].TargetSize()),
 		matrix.NewCoord(Input, Input), matrix.NewCoord(Input, Input), matrix.NewCoord(Input, Input),
 		matrix.NewCoord(Input, Input), matrix.NewCoord(Input, 1))
 	w, h := opt[0].Output.Output.W, opt[0].Output.Output.H
