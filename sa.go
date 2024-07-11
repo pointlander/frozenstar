@@ -104,22 +104,26 @@ func GetTrainingData(sets []Set, s int) (opt []Opt) {
 		opt[i].Opt = matrix.NewZeroMatrix(Input, opt[i].TargetOffset()+opt[i].TargetSize())
 	}
 	for i, pair := range train {
+		index := 0
 		for _, p := range pair.Input.I {
-			opt[i].Opt.Data[p.C] = 1
-			opt[i].Opt.Data[10+p.X] = 1
-			opt[i].Opt.Data[10+pair.Input.W+p.Y] = 1
+			opt[i].Opt.Data[index+int(p.C)] = 1
+			opt[i].Opt.Data[index+10+p.X] = 1
+			opt[i].Opt.Data[index+10+pair.Input.W+p.Y] = 1
+			index += Input
 		}
 		for _, p := range pair.Output.I {
-			opt[i].Opt.Data[Input+p.C] = 1
-			opt[i].Opt.Data[Input+10+p.X] = 1
-			opt[i].Opt.Data[Input+10+pair.Output.W+p.Y] = 1
-			opt[i].Opt.Data[Input+10+pair.Output.W+pair.Output.H] = 1
+			opt[i].Opt.Data[index+int(p.C)] = 1
+			opt[i].Opt.Data[index+10+p.X] = 1
+			opt[i].Opt.Data[index+10+pair.Output.W+p.Y] = 1
+			opt[i].Opt.Data[index+10+pair.Output.W+pair.Output.H] = 1
+			index += Input
 		}
 
 		for _, p := range test[0].Input.I {
-			opt[i].Opt.Data[2*Input+p.C] = 1
-			opt[i].Opt.Data[2*Input+10+p.X] = 1
-			opt[i].Opt.Data[2*Input+10+test[0].Input.W+p.Y] = 1
+			opt[i].Opt.Data[index+int(p.C)] = 1
+			opt[i].Opt.Data[index+10+p.X] = 1
+			opt[i].Opt.Data[index+10+test[0].Input.W+p.Y] = 1
+			index += Input
 		}
 	}
 	return opt
@@ -160,34 +164,38 @@ func SA() {
 		w, h := opt[0].Output.Output.W, opt[0].Output.Output.H
 		for j := range opt {
 			offset := len(opt[j].Input.Input.I) + len(opt[j].Input.Output.I) + len(opt[j].Output.Input.I)
-			cc := opt[j].Opt.Data[Input*offset : Input*offset+10]
-			w1CC := w1.Data[:10]
-			maxCC, indexCC := float32(0.0), 0
-			for key, value := range w1CC {
-				if value > maxCC {
-					indexCC, maxCC = key, value
+			for k := 0; k < w1.Rows; k++ {
+				offset := offset + k
+				w1Offset := Input * k
+				cc := opt[j].Opt.Data[Input*offset : Input*offset+10]
+				w1CC := w1.Data[w1Offset : w1Offset+10]
+				maxCC, indexCC := float32(0.0), 0
+				for key, value := range w1CC {
+					if value > maxCC {
+						indexCC, maxCC = key, value
+					}
 				}
-			}
-			xx := opt[j].Opt.Data[Input*offset+10 : Input*offset+10+w]
-			w1XX := w1.Data[10 : 10+w]
-			maxXX, indexXX := float32(0.0), 0
-			for key, value := range w1XX {
-				if value > maxXX {
-					indexXX, maxXX = key, value
+				xx := opt[j].Opt.Data[Input*offset+10 : Input*offset+10+w]
+				w1XX := w1.Data[w1Offset+10 : w1Offset+10+w]
+				maxXX, indexXX := float32(0.0), 0
+				for key, value := range w1XX {
+					if value > maxXX {
+						indexXX, maxXX = key, value
+					}
 				}
-			}
-			yy := opt[j].Opt.Data[Input*offset+10+w : Input*offset+10+w+h]
-			w1YY := w1.Data[10+w : 10+w+h]
-			maxYY, indexYY := float32(0.0), 0
-			for key, value := range w1YY {
-				if value > maxYY {
-					indexYY, maxYY = key, value
+				yy := opt[j].Opt.Data[Input*offset+10+w : Input*offset+10+w+h]
+				w1YY := w1.Data[w1Offset+10+w : w1Offset+10+w+h]
+				maxYY, indexYY := float32(0.0), 0
+				for key, value := range w1YY {
+					if value > maxYY {
+						indexYY, maxYY = key, value
+					}
 				}
+				cc[indexCC] = 1
+				xx[indexXX] = 1
+				yy[indexYY] = 1
+				opt[j].Opt.Data[Input*offset+10+w+h] = 1
 			}
-			cc[indexCC] = 1
-			xx[indexXX] = 1
-			yy[indexYY] = 1
-			opt[j].Opt.Data[Input*offset+10+w+h] = 1
 			/*for k, value := range w1.Data {
 				bit := 1.0
 				if value < 0.0 {
@@ -229,7 +237,7 @@ func SA() {
 			fmt.Printf(".")
 		}
 		fmt.Printf("\n")
-	}, matrix.NewCoord(Input*opt[0].TargetSize(), 1),
+	}, matrix.NewCoord(Input, opt[0].TargetSize()),
 		matrix.NewCoord(Input, 2*Input), matrix.NewCoord(Input, 2*Input), matrix.NewCoord(Input, 2*Input),
 		matrix.NewCoord(Input, Input), matrix.NewCoord(Input, 1))
 	w, h := opt[0].Output.Output.W, opt[0].Output.Output.H
