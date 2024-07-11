@@ -47,34 +47,38 @@ func AC() {
 		w, h := opt[0].Output.Output.W, opt[0].Output.Output.H
 		for j := range opt {
 			offset := len(opt[j].Input.Input.I) + len(opt[j].Input.Output.I) + len(opt[j].Output.Input.I)
-			cc := opt[j].Opt.Data[Input*offset : Input*offset+10]
-			w1CC := w1.Data[:10]
-			maxCC, indexCC := float32(0.0), 0
-			for key, value := range w1CC {
-				if value > maxCC {
-					indexCC, maxCC = key, value
+			for k := 0; k < w1.Rows; k++ {
+				offset := offset + k
+				w1Offset := Input * k
+				cc := opt[j].Opt.Data[Input*offset : Input*offset+10]
+				w1CC := w1.Data[w1Offset : w1Offset+10]
+				maxCC, indexCC := float32(0.0), 0
+				for key, value := range w1CC {
+					if value > maxCC {
+						indexCC, maxCC = key, value
+					}
 				}
-			}
-			xx := opt[j].Opt.Data[Input*offset+10 : Input*offset+10+w]
-			w1XX := w1.Data[10 : 10+w]
-			maxXX, indexXX := float32(0.0), 0
-			for key, value := range w1XX {
-				if value > maxXX {
-					indexXX, maxXX = key, value
+				xx := opt[j].Opt.Data[Input*offset+10 : Input*offset+10+w]
+				w1XX := w1.Data[w1Offset+10 : w1Offset+10+w]
+				maxXX, indexXX := float32(0.0), 0
+				for key, value := range w1XX {
+					if value > maxXX {
+						indexXX, maxXX = key, value
+					}
 				}
-			}
-			yy := opt[j].Opt.Data[Input*offset+10+w : Input*offset+10+w+h]
-			w1YY := w1.Data[10+w : 10+w+h]
-			maxYY, indexYY := float32(0.0), 0
-			for key, value := range w1YY {
-				if value > maxYY {
-					indexYY, maxYY = key, value
+				yy := opt[j].Opt.Data[Input*offset+10+w : Input*offset+10+w+h]
+				w1YY := w1.Data[w1Offset+10+w : w1Offset+10+w+h]
+				maxYY, indexYY := float32(0.0), 0
+				for key, value := range w1YY {
+					if value > maxYY {
+						indexYY, maxYY = key, value
+					}
 				}
+				cc[indexCC] = 1
+				xx[indexXX] = 1
+				yy[indexYY] = 1
+				opt[j].Opt.Data[Input*offset+10+w+h] = 1
 			}
-			cc[indexCC] = 1
-			xx[indexXX] = 1
-			yy[indexYY] = 1
-			opt[j].Opt.Data[Input*offset+10+w+h] = 1
 			/*for k, value := range w1.Data {
 				bit := 1.0
 				if value < 0.0 {
