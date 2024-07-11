@@ -87,9 +87,11 @@ func AC() {
 		for i := range opt {
 			output := w2.MulT(opt[i].Opt).Add(b2).Sigmoid()
 			out := matrix.SelfAttention(q.MulT(output), k.MulT(output), v.MulT(output))
-			for j := 0; j < out.Cols; j++ {
-				diff := out.Data[j] - opt[i].Opt.Data[j]
-				sum += float64(diff * diff)
+			for j := 0; j < out.Rows; j++ {
+				for k := 0; k < out.Cols; k++ {
+					diff := out.Data[j*out.Cols+k] - opt[i].Opt.Data[j*out.Cols+k]
+					sum += float64(diff * diff)
+				}
 			}
 		}
 		sample.Cost = sum
