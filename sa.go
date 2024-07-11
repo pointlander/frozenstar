@@ -107,19 +107,19 @@ func GetTrainingData(sets []Set, s int) (opt []Opt) {
 		for _, p := range pair.Input.I {
 			opt[i].Opt.Data[p.C] = 1
 			opt[i].Opt.Data[10+p.X] = 1
-			opt[i].Opt.Data[10+30+p.Y] = 1
+			opt[i].Opt.Data[10+pair.Input.W+p.Y] = 1
 		}
 		for _, p := range pair.Output.I {
 			opt[i].Opt.Data[Input+p.C] = 1
 			opt[i].Opt.Data[Input+10+p.X] = 1
-			opt[i].Opt.Data[Input+10+30+p.Y] = 1
-			opt[i].Opt.Data[Input+10+30+30] = 1
+			opt[i].Opt.Data[Input+10+pair.Output.W+p.Y] = 1
+			opt[i].Opt.Data[Input+10+pair.Output.W+pair.Output.H] = 1
 		}
 
 		for _, p := range test[0].Input.I {
 			opt[i].Opt.Data[2*Input+p.C] = 1
 			opt[i].Opt.Data[2*Input+10+p.X] = 1
-			opt[i].Opt.Data[2*Input+10+30+p.Y] = 1
+			opt[i].Opt.Data[2*Input+10+test[0].Input.W+p.Y] = 1
 		}
 	}
 	return opt
