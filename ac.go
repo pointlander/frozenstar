@@ -167,8 +167,8 @@ func AC() {
 		}
 		fmt.Printf("\n")
 	}, matrix.NewCoord(Input, opt[0].TargetSize()),
-		matrix.NewCoord(Input, Input), matrix.NewCoord(Input, Input), matrix.NewCoord(Input, Input),
-		matrix.NewCoord(Input, Input), matrix.NewCoord(Input, 1),
+		matrix.NewCoord(8*Input, Input), matrix.NewCoord(8*Input, Input), matrix.NewCoord(8*Input, Input),
+		matrix.NewCoord(Input, 8*Input), matrix.NewCoord(8*Input, 1),
 		matrix.NewCoord(Input, opt1[0].TargetSize()))
 	printResult := func(sample matrix.Sample, opt []Opt, m int) {
 		w, h := opt[0].Output.Output.W, opt[0].Output.Output.H
