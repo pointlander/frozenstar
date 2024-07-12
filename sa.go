@@ -108,21 +108,21 @@ func GetTrainingData(sets []Set, s int) (opt []Opt) {
 		for _, p := range pair.Input.I {
 			opt[i].Opt.Data[index+int(p.C)] = 1
 			opt[i].Opt.Data[index+10+p.X] = 1
-			opt[i].Opt.Data[index+10+pair.Input.W+p.Y] = 1
+			opt[i].Opt.Data[index+10+30+p.Y] = 1
 			index += Input
 		}
 		for _, p := range pair.Output.I {
 			opt[i].Opt.Data[index+int(p.C)] = 1
 			opt[i].Opt.Data[index+10+p.X] = 1
-			opt[i].Opt.Data[index+10+pair.Output.W+p.Y] = 1
-			opt[i].Opt.Data[index+10+pair.Output.W+pair.Output.H] = 1
+			opt[i].Opt.Data[index+10+30+p.Y] = 1
+			opt[i].Opt.Data[index+10+30+30] = 1
 			index += Input
 		}
 
 		for _, p := range test[0].Input.I {
 			opt[i].Opt.Data[index+int(p.C)] = 1
 			opt[i].Opt.Data[index+10+p.X] = 1
-			opt[i].Opt.Data[index+10+test[0].Input.W+p.Y] = 1
+			opt[i].Opt.Data[index+10+30+p.Y] = 1
 			index += Input
 		}
 	}
@@ -161,7 +161,6 @@ func SA() {
 		y6 := sample.Vars[5][1].Sample()
 		z6 := sample.Vars[5][2].Sample()
 		b2 := x6.Add(y6.H(z6))
-		w, h := opt[0].Output.Output.W, opt[0].Output.Output.H
 		for j := range opt {
 			offset := len(opt[j].Input.Input.I) + len(opt[j].Input.Output.I) + len(opt[j].Output.Input.I)
 			for k := 0; k < w1.Rows; k++ {
@@ -175,16 +174,16 @@ func SA() {
 						indexCC, maxCC = key, value
 					}
 				}
-				xx := opt[j].Opt.Data[Input*offset+10 : Input*offset+10+w]
-				w1XX := w1.Data[w1Offset+10 : w1Offset+10+w]
+				xx := opt[j].Opt.Data[Input*offset+10 : Input*offset+10+30]
+				w1XX := w1.Data[w1Offset+10 : w1Offset+10+30]
 				maxXX, indexXX := float32(0.0), 0
 				for key, value := range w1XX {
 					if value > maxXX {
 						indexXX, maxXX = key, value
 					}
 				}
-				yy := opt[j].Opt.Data[Input*offset+10+w : Input*offset+10+w+h]
-				w1YY := w1.Data[w1Offset+10+w : w1Offset+10+w+h]
+				yy := opt[j].Opt.Data[Input*offset+10+30 : Input*offset+10+30+30]
+				w1YY := w1.Data[w1Offset+10+30 : w1Offset+10+30+30]
 				maxYY, indexYY := float32(0.0), 0
 				for key, value := range w1YY {
 					if value > maxYY {
@@ -194,7 +193,7 @@ func SA() {
 				cc[indexCC] = 1
 				xx[indexXX] = 1
 				yy[indexYY] = 1
-				opt[j].Opt.Data[Input*offset+10+w+h] = 1
+				opt[j].Opt.Data[Input*offset+10+30+30] = 1
 			}
 		}
 		sum := 0.0

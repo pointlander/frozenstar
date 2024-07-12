@@ -44,7 +44,6 @@ func AC() {
 		y6 := sample.Vars[5][1].Sample()
 		z6 := sample.Vars[5][2].Sample()
 		b2 := x6.Add(y6.H(z6))
-		w, h := opt[0].Output.Output.W, opt[0].Output.Output.H
 		for j := range opt {
 			offset := len(opt[j].Input.Input.I) + len(opt[j].Input.Output.I) + len(opt[j].Output.Input.I)
 			for k := 0; k < w1.Rows; k++ {
@@ -58,16 +57,16 @@ func AC() {
 						indexCC, maxCC = key, value
 					}
 				}
-				xx := opt[j].Opt.Data[Input*offset+10 : Input*offset+10+w]
-				w1XX := w1.Data[w1Offset+10 : w1Offset+10+w]
+				xx := opt[j].Opt.Data[Input*offset+10 : Input*offset+10+30]
+				w1XX := w1.Data[w1Offset+10 : w1Offset+10+30]
 				maxXX, indexXX := float32(0.0), 0
 				for key, value := range w1XX {
 					if value > maxXX {
 						indexXX, maxXX = key, value
 					}
 				}
-				yy := opt[j].Opt.Data[Input*offset+10+w : Input*offset+10+w+h]
-				w1YY := w1.Data[w1Offset+10+w : w1Offset+10+w+h]
+				yy := opt[j].Opt.Data[Input*offset+10+30 : Input*offset+10+30+30]
+				w1YY := w1.Data[w1Offset+10+30 : w1Offset+10+30+30]
 				maxYY, indexYY := float32(0.0), 0
 				for key, value := range w1YY {
 					if value > maxYY {
@@ -77,7 +76,7 @@ func AC() {
 				cc[indexCC] = 1
 				xx[indexXX] = 1
 				yy[indexYY] = 1
-				opt[j].Opt.Data[Input*offset+10+w+h] = 1
+				opt[j].Opt.Data[Input*offset+10+30+30] = 1
 			}
 		}
 		sum := 0.0
