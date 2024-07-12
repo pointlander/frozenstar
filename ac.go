@@ -20,6 +20,7 @@ func AC() {
 	done := make(chan bool, 8)
 	process := func(sample *matrix.Sample) {
 		opt := GetTrainingData(sets, 0)
+		opt1 := GetTrainingData(sets, 1)
 		x1 := sample.Vars[0][0].Sample()
 		y1 := sample.Vars[0][1].Sample()
 		z1 := sample.Vars[0][2].Sample()
@@ -44,6 +45,10 @@ func AC() {
 		y6 := sample.Vars[5][1].Sample()
 		z6 := sample.Vars[5][2].Sample()
 		b2 := x6.Add(y6.H(z6))
+		x7 := sample.Vars[6][0].Sample()
+		y7 := sample.Vars[6][1].Sample()
+		z7 := sample.Vars[6][2].Sample()
+		w3 := x7.Add(y7.H(z7))
 		for j := range opt {
 			offset := len(opt[j].Input.Input.I) + len(opt[j].Input.Output.I) + len(opt[j].Output.Input.I)
 			for k := 0; k < w1.Rows; k++ {
@@ -79,6 +84,41 @@ func AC() {
 				opt[j].Opt.Data[Input*offset+10+30+30] = 1
 			}
 		}
+		for j := range opt1 {
+			offset := len(opt1[j].Input.Input.I) + len(opt1[j].Input.Output.I) + len(opt1[j].Output.Input.I)
+			for k := 0; k < w1.Rows; k++ {
+				offset := offset + k
+				w1Offset := Input * k
+				cc := opt1[j].Opt.Data[Input*offset : Input*offset+10]
+				w1CC := w3.Data[w1Offset : w1Offset+10]
+				maxCC, indexCC := float32(0.0), 0
+				for key, value := range w1CC {
+					if value > maxCC {
+						indexCC, maxCC = key, value
+					}
+				}
+				xx := opt1[j].Opt.Data[Input*offset+10 : Input*offset+10+30]
+				w1XX := w3.Data[w1Offset+10 : w1Offset+10+30]
+				maxXX, indexXX := float32(0.0), 0
+				for key, value := range w1XX {
+					if value > maxXX {
+						indexXX, maxXX = key, value
+					}
+				}
+				yy := opt1[j].Opt.Data[Input*offset+10+30 : Input*offset+10+30+30]
+				w1YY := w3.Data[w1Offset+10+30 : w1Offset+10+30+30]
+				maxYY, indexYY := float32(0.0), 0
+				for key, value := range w1YY {
+					if value > maxYY {
+						indexYY, maxYY = key, value
+					}
+				}
+				cc[indexCC] = 1
+				xx[indexXX] = 1
+				yy[indexYY] = 1
+				opt1[j].Opt.Data[Input*offset+10+30+30] = 1
+			}
+		}
 		sum := 0.0
 		for i := range opt {
 			output := w2.MulT(opt[i].Opt).Add(b2).Sigmoid()
@@ -90,11 +130,22 @@ func AC() {
 				}
 			}
 		}
+		for i := range opt1 {
+			output := w2.MulT(opt1[i].Opt).Add(b2).Sigmoid()
+			out := matrix.SelfAttention(q.MulT(output), k.MulT(output), v.MulT(output))
+			for j := 0; j < out.Rows; j++ {
+				for k := 0; k < out.Cols; k++ {
+					diff := out.Data[j*out.Cols+k] - opt1[i].Opt.Data[j*out.Cols+k]
+					sum += float64(diff * diff)
+				}
+			}
+		}
 		sample.Cost = sum
 		done <- true
 	}
 	opt := GetTrainingData(sets, 0)
-	optimizer := matrix.NewOptimizer(&rng, 9, .1, 6, func(samples []matrix.Sample, x ...matrix.Matrix) {
+	opt1 := GetTrainingData(sets, 1)
+	optimizer := matrix.NewOptimizer(&rng, 9, .1, 7, func(samples []matrix.Sample, x ...matrix.Matrix) {
 		index, flight, cpus := 0, 0, runtime.NumCPU()
 		for flight < cpus && index < len(samples) {
 			go process(&samples[index])
@@ -117,13 +168,10 @@ func AC() {
 		fmt.Printf("\n")
 	}, matrix.NewCoord(Input, opt[0].TargetSize()),
 		matrix.NewCoord(Input, Input), matrix.NewCoord(Input, Input), matrix.NewCoord(Input, Input),
-		matrix.NewCoord(Input, Input), matrix.NewCoord(Input, 1))
-	w, h := opt[0].Output.Output.W, opt[0].Output.Output.H
-	var sample matrix.Sample
-	for i := 0; i < 33; i++ {
-		sample = optimizer.Iterate()
-		fmt.Println(i, sample.Cost)
-		cost := sample.Cost
+		matrix.NewCoord(Input, Input), matrix.NewCoord(Input, 1),
+		matrix.NewCoord(Input, opt1[0].TargetSize()))
+	printResult := func(sample matrix.Sample, opt []Opt, m int) {
+		w, h := opt[0].Output.Output.W, opt[0].Output.Output.H
 		type Coord struct {
 			Signal float32
 			Coord  int
@@ -140,9 +188,9 @@ func AC() {
 		for j := range grid {
 			grid[j] = make([]Result, w)
 		}
-		x1 := sample.Vars[0][0].Sample()
-		y1 := sample.Vars[0][1].Sample()
-		z1 := sample.Vars[0][2].Sample()
+		x1 := sample.Vars[m][0].Sample()
+		y1 := sample.Vars[m][1].Sample()
+		z1 := sample.Vars[m][2].Sample()
 		w1 := x1.Add(y1.H(z1))
 		for offset := 0; offset < len(w1.Data); offset += Input {
 			maxColor, color := float32(0.0), 0
@@ -250,6 +298,14 @@ func AC() {
 			fmt.Println()
 		}
 		fmt.Println("accuracy", sum/total)
+	}
+	var sample matrix.Sample
+	for i := 0; i < 33; i++ {
+		sample = optimizer.Iterate()
+		fmt.Println(i, sample.Cost)
+		cost := sample.Cost
+		printResult(sample, opt, 0)
+		printResult(sample, opt1, 6)
 		if cost < 0 {
 			cost = 0
 			break
