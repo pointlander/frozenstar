@@ -114,7 +114,7 @@ func AC() {
 	for _, opt := range opts {
 		params = append(params, matrix.NewCoord(Input, opt[0].TargetSize()))
 	}
-	optimizer := matrix.NewOptimizer(&rng, 9, .1, 7, func(samples []matrix.Sample, x ...matrix.Matrix) {
+	optimizer := matrix.NewOptimizer(&rng, 9, .1, 5+*FlagSets, func(samples []matrix.Sample, x ...matrix.Matrix) {
 		index, flight, cpus := 0, 0, runtime.NumCPU()
 		for flight < cpus && index < len(samples) {
 			go process(&samples[index])
