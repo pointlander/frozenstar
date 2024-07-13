@@ -200,20 +200,20 @@ func AC() {
 					if grid[y][x].Signal != 0 {
 						for {
 							sx := false
-							if grid[y][x].IX < w-1 {
+							if grid[y][x].IX < w {
 								sx = true
-								grid[y][x].IX++
 								if apply(grid[y][x]) {
 									break
 								}
+								grid[y][x].IX++
 							}
 							sy := false
-							if grid[y][x].IY < h-1 {
+							if grid[y][x].IY < h {
 								sy = true
-								grid[y][x].IY++
 								if apply(grid[y][x]) {
 									break
 								}
+								grid[y][x].IY++
 							}
 							if sx && sy {
 								break
@@ -227,20 +227,20 @@ func AC() {
 			}
 			for {
 				sx := false
-				if result.IX < w-1 {
+				if result.IX < w {
 					sx = true
-					result.IX++
 					if apply(result) {
 						break
 					}
+					result.IX++
 				}
 				sy := false
-				if result.IY < h-1 {
+				if result.IY < h {
 					sy = true
-					result.IY++
 					if apply(result) {
 						break
 					}
+					result.IY++
 				}
 				if sx && sy {
 					break
