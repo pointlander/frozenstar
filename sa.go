@@ -30,7 +30,7 @@ func (o Opt) TargetSize() int {
 }
 
 // GetTrainingData gets the training data
-func GetTrainingData(sets []Set, s int) (opt []Opt) {
+func GetTrainingData(sets []Set, s, t int) (opt []Opt) {
 	train, test := make([]Pair, 0, 8), make([]Pair, 0, 8)
 	set := sets[s]
 	for _, t := range set.Train {
@@ -100,7 +100,7 @@ func GetTrainingData(sets []Set, s int) (opt []Opt) {
 	opt = make([]Opt, len(train))
 	for i := range opt {
 		opt[i].Input = train[i]
-		opt[i].Output = test[0]
+		opt[i].Output = test[t]
 		opt[i].Opt = matrix.NewZeroMatrix(Input, opt[i].TargetOffset()+opt[i].TargetSize())
 	}
 	for i, pair := range train {
@@ -119,7 +119,7 @@ func GetTrainingData(sets []Set, s int) (opt []Opt) {
 			index += Input
 		}
 
-		for _, p := range test[0].Input.I {
+		for _, p := range test[t].Input.I {
 			opt[i].Opt.Data[index+int(p.C)] = 1
 			opt[i].Opt.Data[index+10+p.X] = 1
 			opt[i].Opt.Data[index+10+30+p.Y] = 1
@@ -136,7 +136,7 @@ func SA() {
 	sets := Load()
 	done := make(chan bool, 8)
 	process := func(sample *matrix.Sample) {
-		opt := GetTrainingData(sets, 0)
+		opt := GetTrainingData(sets, 0, 0)
 		x1 := sample.Vars[0][0].Sample()
 		y1 := sample.Vars[0][1].Sample()
 		z1 := sample.Vars[0][2].Sample()
@@ -207,7 +207,7 @@ func SA() {
 		sample.Cost = sum
 		done <- true
 	}
-	opt := GetTrainingData(sets, 0)
+	opt := GetTrainingData(sets, 0, 0)
 	optimizer := matrix.NewOptimizer(&rng, 9, .1, 6, func(samples []matrix.Sample, x ...matrix.Matrix) {
 		index, flight, cpus := 0, 0, runtime.NumCPU()
 		for flight < cpus && index < len(samples) {

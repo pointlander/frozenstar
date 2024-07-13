@@ -19,132 +19,101 @@ func AC() {
 	sets := Load()
 	done := make(chan bool, 8)
 	process := func(sample *matrix.Sample) {
-		opt := GetTrainingData(sets, 0)
-		opt1 := GetTrainingData(sets, 1)
+		opts := make([][]Opt, 2)
+		for i := range opts {
+			opts[i] = GetTrainingData(sets, i, 0)
+		}
 		x1 := sample.Vars[0][0].Sample()
 		y1 := sample.Vars[0][1].Sample()
 		z1 := sample.Vars[0][2].Sample()
-		w1 := x1.Add(y1.H(z1))
+		q := x1.Add(y1.H(z1))
 		x2 := sample.Vars[1][0].Sample()
 		y2 := sample.Vars[1][1].Sample()
 		z2 := sample.Vars[1][2].Sample()
-		q := x2.Add(y2.H(z2))
+		k := x2.Add(y2.H(z2))
 		x3 := sample.Vars[2][0].Sample()
 		y3 := sample.Vars[2][1].Sample()
 		z3 := sample.Vars[2][2].Sample()
-		k := x3.Add(y3.H(z3))
+		v := x3.Add(y3.H(z3))
 		x4 := sample.Vars[3][0].Sample()
 		y4 := sample.Vars[3][1].Sample()
 		z4 := sample.Vars[3][2].Sample()
-		v := x4.Add(y4.H(z4))
+		w1 := x4.Add(y4.H(z4))
 		x5 := sample.Vars[4][0].Sample()
 		y5 := sample.Vars[4][1].Sample()
 		z5 := sample.Vars[4][2].Sample()
-		w2 := x5.Add(y5.H(z5))
-		x6 := sample.Vars[5][0].Sample()
-		y6 := sample.Vars[5][1].Sample()
-		z6 := sample.Vars[5][2].Sample()
-		b2 := x6.Add(y6.H(z6))
-		x7 := sample.Vars[6][0].Sample()
-		y7 := sample.Vars[6][1].Sample()
-		z7 := sample.Vars[6][2].Sample()
-		w3 := x7.Add(y7.H(z7))
-		for j := range opt {
-			offset := len(opt[j].Input.Input.I) + len(opt[j].Input.Output.I) + len(opt[j].Output.Input.I)
-			for k := 0; k < w1.Rows; k++ {
-				offset := offset + k
-				w1Offset := Input * k
-				cc := opt[j].Opt.Data[Input*offset : Input*offset+10]
-				w1CC := w1.Data[w1Offset : w1Offset+10]
-				maxCC, indexCC := float32(0.0), 0
-				for key, value := range w1CC {
-					if value > maxCC {
-						indexCC, maxCC = key, value
-					}
-				}
-				xx := opt[j].Opt.Data[Input*offset+10 : Input*offset+10+30]
-				w1XX := w1.Data[w1Offset+10 : w1Offset+10+30]
-				maxXX, indexXX := float32(0.0), 0
-				for key, value := range w1XX {
-					if value > maxXX {
-						indexXX, maxXX = key, value
-					}
-				}
-				yy := opt[j].Opt.Data[Input*offset+10+30 : Input*offset+10+30+30]
-				w1YY := w1.Data[w1Offset+10+30 : w1Offset+10+30+30]
-				maxYY, indexYY := float32(0.0), 0
-				for key, value := range w1YY {
-					if value > maxYY {
-						indexYY, maxYY = key, value
-					}
-				}
-				cc[indexCC] = 1
-				xx[indexXX] = 1
-				yy[indexYY] = 1
-				opt[j].Opt.Data[Input*offset+10+30+30] = 1
-			}
+		b1 := x5.Add(y5.H(z5))
+		params := make([]matrix.Matrix, len(opts))
+		for i := range params {
+			x1 := sample.Vars[5+i][0].Sample()
+			y1 := sample.Vars[5+i][1].Sample()
+			z1 := sample.Vars[5+i][2].Sample()
+			params[i] = x1.Add(y1.H(z1))
 		}
-		for j := range opt1 {
-			offset := len(opt1[j].Input.Input.I) + len(opt1[j].Input.Output.I) + len(opt1[j].Output.Input.I)
-			for k := 0; k < w1.Rows; k++ {
-				offset := offset + k
-				w1Offset := Input * k
-				cc := opt1[j].Opt.Data[Input*offset : Input*offset+10]
-				w1CC := w3.Data[w1Offset : w1Offset+10]
-				maxCC, indexCC := float32(0.0), 0
-				for key, value := range w1CC {
-					if value > maxCC {
-						indexCC, maxCC = key, value
+		for i, opt := range opts {
+			for j := range opt {
+				offset := len(opt[j].Input.Input.I) + len(opt[j].Input.Output.I) + len(opt[j].Output.Input.I)
+				for k := 0; k < params[i].Rows; k++ {
+					offset := offset + k
+					w1Offset := Input * k
+					cc := opt[j].Opt.Data[Input*offset : Input*offset+10]
+					w1CC := params[i].Data[w1Offset : w1Offset+10]
+					maxCC, indexCC := float32(0.0), 0
+					for key, value := range w1CC {
+						if value > maxCC {
+							indexCC, maxCC = key, value
+						}
 					}
-				}
-				xx := opt1[j].Opt.Data[Input*offset+10 : Input*offset+10+30]
-				w1XX := w3.Data[w1Offset+10 : w1Offset+10+30]
-				maxXX, indexXX := float32(0.0), 0
-				for key, value := range w1XX {
-					if value > maxXX {
-						indexXX, maxXX = key, value
+					xx := opt[j].Opt.Data[Input*offset+10 : Input*offset+10+30]
+					w1XX := params[i].Data[w1Offset+10 : w1Offset+10+30]
+					maxXX, indexXX := float32(0.0), 0
+					for key, value := range w1XX {
+						if value > maxXX {
+							indexXX, maxXX = key, value
+						}
 					}
-				}
-				yy := opt1[j].Opt.Data[Input*offset+10+30 : Input*offset+10+30+30]
-				w1YY := w3.Data[w1Offset+10+30 : w1Offset+10+30+30]
-				maxYY, indexYY := float32(0.0), 0
-				for key, value := range w1YY {
-					if value > maxYY {
-						indexYY, maxYY = key, value
+					yy := opt[j].Opt.Data[Input*offset+10+30 : Input*offset+10+30+30]
+					w1YY := params[i].Data[w1Offset+10+30 : w1Offset+10+30+30]
+					maxYY, indexYY := float32(0.0), 0
+					for key, value := range w1YY {
+						if value > maxYY {
+							indexYY, maxYY = key, value
+						}
 					}
+					cc[indexCC] = 1
+					xx[indexXX] = 1
+					yy[indexYY] = 1
+					opt[j].Opt.Data[Input*offset+10+30+30] = 1
 				}
-				cc[indexCC] = 1
-				xx[indexXX] = 1
-				yy[indexYY] = 1
-				opt1[j].Opt.Data[Input*offset+10+30+30] = 1
 			}
 		}
 		sum := 0.0
-		for i := range opt {
-			output := w2.MulT(opt[i].Opt).Add(b2).Sigmoid()
-			out := matrix.SelfAttention(q.MulT(output), k.MulT(output), v.MulT(output))
-			for j := 0; j < out.Rows; j++ {
-				for k := 0; k < out.Cols; k++ {
-					diff := out.Data[j*out.Cols+k] - opt[i].Opt.Data[j*out.Cols+k]
-					sum += float64(diff * diff)
-				}
-			}
-		}
-		for i := range opt1 {
-			output := w2.MulT(opt1[i].Opt).Add(b2).Sigmoid()
-			out := matrix.SelfAttention(q.MulT(output), k.MulT(output), v.MulT(output))
-			for j := 0; j < out.Rows; j++ {
-				for k := 0; k < out.Cols; k++ {
-					diff := out.Data[j*out.Cols+k] - opt1[i].Opt.Data[j*out.Cols+k]
-					sum += float64(diff * diff)
+		for _, opt := range opts {
+			for i := range opt {
+				output := w1.MulT(opt[i].Opt).Add(b1).Sigmoid()
+				out := matrix.SelfAttention(q.MulT(output), k.MulT(output), v.MulT(output))
+				for j := 0; j < out.Rows; j++ {
+					for k := 0; k < out.Cols; k++ {
+						diff := out.Data[j*out.Cols+k] - opt[i].Opt.Data[j*out.Cols+k]
+						sum += float64(diff * diff)
+					}
 				}
 			}
 		}
 		sample.Cost = sum
 		done <- true
 	}
-	opt := GetTrainingData(sets, 0)
-	opt1 := GetTrainingData(sets, 1)
+	opts := make([][]Opt, 2)
+	for i := range opts {
+		opts[i] = GetTrainingData(sets, i, 0)
+	}
+	params := []matrix.Matrix{
+		matrix.NewCoord(8*Input, Input), matrix.NewCoord(8*Input, Input), matrix.NewCoord(8*Input, Input),
+		matrix.NewCoord(Input, 8*Input), matrix.NewCoord(8*Input, 1),
+	}
+	for _, opt := range opts {
+		params = append(params, matrix.NewCoord(Input, opt[0].TargetSize()))
+	}
 	optimizer := matrix.NewOptimizer(&rng, 9, .1, 7, func(samples []matrix.Sample, x ...matrix.Matrix) {
 		index, flight, cpus := 0, 0, runtime.NumCPU()
 		for flight < cpus && index < len(samples) {
@@ -166,10 +135,7 @@ func AC() {
 			fmt.Printf(".")
 		}
 		fmt.Printf("\n")
-	}, matrix.NewCoord(Input, opt[0].TargetSize()),
-		matrix.NewCoord(8*Input, Input), matrix.NewCoord(8*Input, Input), matrix.NewCoord(8*Input, Input),
-		matrix.NewCoord(Input, 8*Input), matrix.NewCoord(8*Input, 1),
-		matrix.NewCoord(Input, opt1[0].TargetSize()))
+	}, params...)
 	printResult := func(sample matrix.Sample, opt []Opt, m int) {
 		w, h := opt[0].Output.Output.W, opt[0].Output.Output.H
 		type Coord struct {
@@ -304,8 +270,9 @@ func AC() {
 		sample = optimizer.Iterate()
 		fmt.Println(i, sample.Cost)
 		cost := sample.Cost
-		printResult(sample, opt, 0)
-		printResult(sample, opt1, 6)
+		for j, opt := range opts {
+			printResult(sample, opt, 4+j)
+		}
 		if cost < 0 {
 			cost = 0
 			break
