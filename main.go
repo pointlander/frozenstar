@@ -92,6 +92,8 @@ var (
 	FlagSA = flag.Bool("sa", false, "self attention model")
 	// FlagAC is an autocoder model
 	FlagAC = flag.Bool("ac", false, "autocoder model")
+	// FlagSets is the number of sets to learn with
+	FlagSets = flag.Int("sets", 2, "number of sets to learn with")
 )
 
 func main() {

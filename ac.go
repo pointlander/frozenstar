@@ -19,7 +19,7 @@ func AC() {
 	sets := Load()
 	done := make(chan bool, 8)
 	process := func(sample *matrix.Sample) {
-		opts := make([][]Opt, 2)
+		opts := make([][]Opt, *FlagSets)
 		for i := range opts {
 			opts[i] = GetTrainingData(sets, i, 0)
 		}
@@ -103,7 +103,7 @@ func AC() {
 		sample.Cost = sum
 		done <- true
 	}
-	opts := make([][]Opt, 2)
+	opts := make([][]Opt, *FlagSets)
 	for i := range opts {
 		opts[i] = GetTrainingData(sets, i, 0)
 	}
