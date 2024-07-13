@@ -195,6 +195,9 @@ func AC() {
 
 			var apply func(result Result) bool
 			apply = func(result Result) bool {
+				if result.IX == w || result.IY == h {
+					return false
+				}
 				x, y := result.X[result.IX].Coord, result.Y[result.IY].Coord
 				if result.Signal > grid[y][x].Signal {
 					if grid[y][x].Signal != 0 {
