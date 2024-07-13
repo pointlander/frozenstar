@@ -271,7 +271,7 @@ func AC() {
 		fmt.Println(i, sample.Cost)
 		cost := sample.Cost
 		for j, opt := range opts {
-			printResult(sample, opt, 4+j)
+			printResult(sample, opt, 5+j)
 		}
 		if cost < 0 {
 			cost = 0
