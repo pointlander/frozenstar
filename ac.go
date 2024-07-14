@@ -195,13 +195,18 @@ func AC() {
 
 			var apply func(result Result) bool
 			apply = func(result Result) bool {
-				if result.IX == w || result.IY == h {
-					return false
+				ix := result.IX
+				if ix >= w {
+					ix = w - 1
 				}
-				x, y := result.X[result.IX].Coord, result.Y[result.IY].Coord
+				iy := result.IY
+				if iy >= h {
+					iy = h - 1
+				}
+				x, y := result.X[ix].Coord, result.Y[iy].Coord
 				if result.Signal > grid[y][x].Signal {
 					if grid[y][x].Signal != 0 {
-						for {
+						for grid[y][x].IX < w || grid[y][x].IY < h {
 							sx := false
 							if grid[y][x].IX < w {
 								sx = true
@@ -228,7 +233,7 @@ func AC() {
 				}
 				return false
 			}
-			for {
+			for result.IX < w || result.IY < h {
 				sx := false
 				if result.IX < w {
 					sx = true
